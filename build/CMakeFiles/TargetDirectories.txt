@@ -1,0 +1,3 @@
+C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/C_to_Odin.dir
+C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/ZERO_CHECK.dir

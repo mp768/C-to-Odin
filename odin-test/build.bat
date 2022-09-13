@@ -1,0 +1,1 @@
+start "" odin run src
