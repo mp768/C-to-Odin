@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin
+# Install script for directory: C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/C_to_Odin")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files/C_to_Odin")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

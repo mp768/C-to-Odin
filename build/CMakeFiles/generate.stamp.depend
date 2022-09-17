@@ -1,23 +1,23 @@
 # CMake generation dependency list for this directory.
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeCInformation.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeCXXInformation.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeCommonLanguageInclude.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeGenericSystem.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeInitializeConfigs.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeLanguageInformation.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeRCInformation.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeSystemSpecificInformation.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/CMakeSystemSpecificInitialize.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Compiler/CMakeCommonCompilerMacros.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Compiler/MSVC-C.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Compiler/MSVC-CXX.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Platform/Windows-MSVC-C.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Platform/Windows-MSVC-CXX.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Platform/Windows-MSVC.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Platform/Windows.cmake
-C:/Program Files (x86)/CMake/share/cmake-3.18/Modules/Platform/WindowsPaths.cmake
-C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/CMakeLists.txt
-C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/3.18.4/CMakeCCompiler.cmake
-C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/3.18.4/CMakeCXXCompiler.cmake
-C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/3.18.4/CMakeRCCompiler.cmake
-C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/3.18.4/CMakeSystem.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeCXXInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeGenericSystem.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeInitializeConfigs.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeLanguageInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeRCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeSystemSpecificInitialize.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Compiler/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Compiler/MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Platform/Windows-MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Platform/Windows.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Platform/WindowsPaths.cmake
+C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/CMakeLists.txt
+C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/CMakeFiles/3.21.3/CMakeCCompiler.cmake
+C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/CMakeFiles/3.21.3/CMakeCXXCompiler.cmake
+C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/CMakeFiles/3.21.3/CMakeRCCompiler.cmake
+C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/CMakeFiles/3.21.3/CMakeSystem.cmake

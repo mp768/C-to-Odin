@@ -1,4 +1,5 @@
 #include "stdio.h"
+#include "stdint.h"
 
 typedef struct There {
     int c;
@@ -16,11 +17,14 @@ typedef struct Hello {
 
 } Hello;
 
-typedef struct HI {
+typedef struct {
+    const char* const str;
     Hello hi;
 }* HI;
 
 typedef Hello* HelloPtr;
+
+typedef int32_t i32;
 
 typedef enum {
     Some,
@@ -29,7 +33,7 @@ typedef enum {
 
 typedef struct A {
     struct {
-        int a;
+        int32_t a;
     };
 } A;
 

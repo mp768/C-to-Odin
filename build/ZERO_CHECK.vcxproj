@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PreferredToolArchitecture>x86</PreferredToolArchitecture>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -22,8 +22,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{027B2475-E400-34C0-BB0F-E91C868B7AE0}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <ProjectGuid>{3711A36C-3C3F-3388-85B2-3FE1BD65333B}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>ZERO_CHECK</ProjectName>
@@ -66,7 +66,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -76,7 +76,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -86,7 +86,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -96,7 +96,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -105,11 +105,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\f0ea14abb09290950c0daf997ed7c01e\generate.stamp.rule">
-      <StdOutEncoding>UTF-8</StdOutEncoding>
+    <CustomBuild Include="C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\ee7d7f395b2d06dc2332e5feb97e386f\generate.stamp.rule">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Checking Build System</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" "-SC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin" "-BC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/C_to_Odin.sln"
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin -BC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/C_to_Odin.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -117,12 +117,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Checking Build System</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" "-SC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin" "-BC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/C_to_Odin.sln"
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin -BC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/C_to_Odin.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -130,12 +130,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Checking Build System</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" "-SC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin" "-BC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/C_to_Odin.sln"
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin -BC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/C_to_Odin.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -143,12 +143,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Checking Build System</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" "-SC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin" "-BC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/C_to_Odin.sln"
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin -BC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/C_to_Odin.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -156,8 +156,8 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeInitializeConfigs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeLanguageInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.18\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\3.18.4\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\CMakeLists.txt;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeCXXCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeRCCompiler.cmake;C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\3.21.3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
