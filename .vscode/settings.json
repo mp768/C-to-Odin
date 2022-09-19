@@ -49,7 +49,9 @@
         "functional": "cpp",
         "list": "cpp",
         "unordered_map": "cpp",
-        "xhash": "cpp"
+        "xhash": "cpp",
+        "fstream": "cpp",
+        "sstream": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

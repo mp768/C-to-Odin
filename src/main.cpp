@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <clang-c/Index.h>
+#include "keywords.hpp"
 
 #define DEBUG_PRINT
 
@@ -74,212 +75,31 @@ struct ClientData {
 };
 
 void print_struct(ClientData* client_data, StructDecl decl) {
-        std::cout << std::string(client_data->recursion_level, '\t') << "Struct \"" << decl.name << "\":" << std::endl;
+    std::cout << std::string(client_data->recursion_level, '\t') << "Struct \"" << decl.name << "\":" << std::endl;
 
-        // std::cout << "FIELD AMOUNT: " << decl.fields.size() << std::endl;
-        for (auto field : decl.fields) {
-            // std::cout << "IS TRUE: " << field.is_type_named << std::endl;
-            if (field.is_type_named) {
-                std::cout << std::string(client_data->recursion_level+1, '\t') << field.type_named.type_name << " " << field.name << "," << std::endl;
-            } else {
-                switch (field.type_not_named.type) {
-                    case FieldType::STRUCT:
-                        client_data->recursion_level += 1;
+    // std::cout << "FIELD AMOUNT: " << decl.fields.size() << std::endl;
+    for (auto field : decl.fields) {
+        // std::cout << "IS TRUE: " << field.is_type_named << std::endl;
+        if (field.is_type_named) {
+            std::cout << std::string(client_data->recursion_level+1, '\t') << field.type_named.type_name << " " << field.name << "," << std::endl;
+        } else {
+            switch (field.type_not_named.type) {
+                case FieldType::STRUCT:
+                    client_data->recursion_level += 1;
 
-                        print_struct(client_data, client_data->struct_decls[field.type_not_named.index]);
+                    print_struct(client_data, client_data->struct_decls[field.type_not_named.index]);
 
-                        client_data->recursion_level -= 1;
+                    client_data->recursion_level -= 1;
 
-                        std::cout << std::string(client_data->recursion_level+1, '\t') << std::string(field.type_not_named.pointer_level, '*') << " " << field.name << "," << std::endl;
+                    std::cout << std::string(client_data->recursion_level+1, '\t') << std::string(field.type_not_named.pointer_level, '*') << " " << field.name << "," << std::endl;
 
-                        break;
-                    case FieldType::ENUM:
-                        break;
-                }
+                    break;
+                case FieldType::ENUM:
+                    break;
             }
         }
     }
-
-CXVisitorResult visitor(CXCursor cursor, CXCursor parent, CXClientData client_data_) {
-    CXSourceLocation location = clang_getCursorLocation(cursor);
-    if(clang_Location_isFromMainFile( location ) == 0)
-        return CXVisit_Continue;
-
-    ClientData* client_data = (ClientData*)(client_data_);
-    client_data->recursion_level += 1;
-
-    CXCursorKind cursorKind = clang_getCursorKind(cursor);
-
-    switch (cursor.kind) {
-        case CXCursor_StructDecl:
-            {
-                StructDecl decl;
-
-                decl.name = (char*)clang_getCursorSpelling(cursor).data;
-
-                struct MoreClientData {
-                    ClientData* data;
-                    std::vector<StructField> fields;
-                }; 
-
-                MoreClientData more_client_data;
-                more_client_data.data = client_data;
-                more_client_data.fields.reserve(1);
-
-                clang_visitChildren(
-                    cursor, 
-                    [](CXCursor cursor, CXCursor parent, CXClientData client_data_) {
-                        auto client_data = (MoreClientData*)client_data_;
-
-                        switch (clang_getCursorKind(cursor)) {
-                            case CXCursor_FieldDecl:
-                                {
-                                    StructField field;
-
-                                    field.type_named.type = clang_getCursorType(cursor);
-
-                                    std::string type_name = std::string((char*)clang_getTypeSpelling(field.type_named.type).data);
-
-                                    field.is_type_named = !(type_name.find("unnamed") != std::string::npos || 
-                                                          type_name.find("anonymous") != std::string::npos);
-
-                                    if (field.is_type_named) {
-                                        field.type_named.type_name = type_name;
-                                    } else {
-                                        field.type_not_named.type = type_name.find("struct") != std::string::npos ? FieldType::STRUCT : FieldType::ENUM;
-
-                                        switch (field.type_not_named.type) {
-                                            case FieldType::STRUCT:
-                                                field.type_not_named.index = client_data->data->struct_decls.size()-1;
-                                                break;
-
-                                            case FieldType::ENUM:
-                                                break;
-                                        }
-
-                                        field.type_not_named.pointer_level = std::count(type_name.begin(), type_name.end(), '*');
-                                        client_data->fields.pop_back();
-                                    }
-
-                                    field.name = std::string((char*)clang_getCursorSpelling(cursor).data);
-
-                                    client_data->fields.push_back(field);
-                                }
-
-                                break;
-
-                            case CXCursor_StructDecl:
-                                {
-                                    StructField field;
-
-                                    field.is_type_named = false;
-                                    field.name = "_";
-                                    field.type_not_named.pointer_level = 0;
-                                    field.type_not_named.type = FieldType::STRUCT;
-
-                                    clang_visitChildren(
-                                        cursor,
-                                        (CXCursorVisitor)visitor,
-                                        client_data->data
-                                    );
-
-                                    field.type_not_named.index = client_data->data->struct_decls.size()-1;
-                                    client_data->fields.push_back(field);
-                                }
-                                
-                                return CXChildVisit_Continue;   
-                            
-                            default:
-                                break;
-                        }
-
-                        return CXChildVisit_Continue;
-                    }, 
-                    &more_client_data
-                );
-
-                decl.fields = more_client_data.fields;
-
-                client_data->push_struct(decl);
-            }
-            
-            break;
-        
-        case CXCursor_TypedefDecl:
-            {
-                // TypeDef type_def;
-
-                // type_def.name = (char*)clang_getCursorSpelling(cursor).data;
-
-                // CXType type = clang_getCursorType(cursor);
-
-                // type_def.type_name = (char*)clang_getTypeSpelling(type).data;
-
-                // bool is_struct = type_def.type_name.find("struct") != std::string::npos;
-                // bool is_enum = type_def.type_name.find("enum") != std::string::npos;
-
-                // type_def.is = TypeDef::IS::NEITHER;
-
-                // if (!(is_struct || is_enum)) {
-                //     goto TYPEDEF_END;
-                // }
-
-                // bool is_unnamed = type_def.type_name.find("unnamed") != std::string::npos || 
-                //                   type_def.type_name.find("anonymous") != std::string::npos;
-                // type_def.pointer_level = std::count(type_def.type_name.begin(), type_def.type_name.end(), '*');
-
-                // if (is_enum) {
-                //     type_def.is = TypeDef::IS::ENUM;
-
-                //     // TODO: I have no implementation stufffor enums yet
-
-                // } else {
-                //     // we are just going to assume it's an struct at this point
-                //     type_def.is = TypeDef::IS::STRUCT;
-
-                //     if (is_unnamed) {
-                //         type_def.anonymous = true;
-                //         type_def.struct_decl = client_data->struct_decls[client_data->struct_decls.size()-1];
-                //         goto TYPEDEF_END;
-                //     }
-
-                //     if (type_def.pointer_level == 0) {
-                //         auto type_to_check = type_def.type_name.substr(6, type_def.type_name.size()-6-type_def.pointer_level);
-
-                //         for (auto decl : client_data->struct_decls) {
-                            
-                //         }
-                //     }
-                // }
-
-                // TYPEDEF_END:
-                //     client_data->push_typedef(type_def);
-            }
-
-            break;
-
-        default:
-            break;
-    }
-
-    // std::cout << std::string(curLevel, '-') << " " << clang_getCString(clang_getCursorKindSpelling(cursorKind)) <<  
-    // " (" << clang_getCString(clang_getCursorSpelling(cursor)) << ")" << std::endl;
-
-    clang_visitChildren(
-        cursor,
-        (CXCursorVisitor)visitor,
-        client_data
-    ); 
-
-    client_data->recursion_level -= 1;
-    return CXVisit_Continue;
 }
-
-// NOTE:
-// it may be a better idea to just collect the data from the recursion and leave
-// we could do this through a queue system that fills specific data then it constructs all of it at the end.
-// this would allow ambiguous stuff like aliasing, pointer to struct type that doesn't exist, etc to be easier 
-// to parse and make valid odin code with.
 
 struct DataEntry {
     enum class IS {
@@ -395,6 +215,10 @@ void recurse_struct(SaveData* data, std::string name, CXCursor cursor) {
 
                         field.name = (char*)clang_getCursorSpelling(cursor).data;
 
+                        if (unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end()) {
+                            field.name += "_v";
+                        }
+
                         field.is_type_named = !(type_name.find("unnamed ") != std::string::npos || 
                                                 type_name.find("anonymous ") != std::string::npos);
 
@@ -458,88 +282,6 @@ void recurse_struct(SaveData* data, std::string name, CXCursor cursor) {
 
     data->struct_decls.push_back(decl);
 }
-
-std::unordered_map<std::string, std::string> c_keyword_to_odin = {
-    { "int", "__CORE__C__TYPE__LITERAL__.int" },
-    { "signed", "__CORE__C__TYPE__LITERAL__.int" },
-    { "unsigned int", "__CORE__C__TYPE__LITERAL__.uint" },
-
-    { "char", "__CORE__C__TYPE__LITERAL__.char" },
-    { "signed char", "__CORE__C__TYPE__LITERAL__.schar" },
-    { "unsigned char", "__CORE__C__TYPE__LITERAL__.uchar" },
-
-    { "short", "__CORE__C__TYPE__LITERAL__.short" },
-    { "signed short", "__CORE__C__TYPE__LITERAL__.short" },
-    { "unsigned short", "__CORE__C__TYPE__LITERAL__.ushort" },
-
-    { "long", "__CORE__C__TYPE__LITERAL__.long" },
-    { "signed long", "__CORE__C__TYPE__LITERAL__.long" },
-    { "unsigned long", "__CORE__C__TYPE__LITERAL__.ulong" },
-
-    { "long long", "__CORE__C__TYPE__LITERAL__.longlong" },
-    { "signed long long", "__CORE__C__TYPE__LITERAL__.longlong" },
-    { "unsigned long long", "__CORE__C__TYPE__LITERAL__.ulonglong" },
-
-    { "float", "__CORE__C__TYPE__LITERAL__.float" },
-    { "double", "__CORE__C__TYPE__LITERAL__.double" },
-
-    { "size_t", "__CORE__C__TYPE__LITERAL__.size_t" },
-    { "signed size_t", "__CORE__C__TYPE__LITERAL__.ssize_t" },
-    { "wchar_t", "__CORE__C__TYPE__LITERAL__.wchar_t" },
-
-    { "int8_t", "i8" },
-    { "uint8_t", "u8" },
-    { "int16_t", "i16" },
-    { "uint16_t", "u16" },
-    { "int32_t", "i32" },
-    { "uint32_t", "u32" },
-    { "int64_t", "i64" },
-    { "uint64_t", "u64" },
-
-    { "int_fast8_t", "__CORE__C__TYPE__LITERAL__.int_fast8_t" },
-    { "uint_fast8_t", "__CORE__C__TYPE__LITERAL__.uint_fast8_t" },
-    { "int_fast16_t", "__CORE__C__TYPE__LITERAL__.int_fast16_t" },
-    { "uint_fast16_t", "__CORE__C__TYPE__LITERAL__.uint_fast16_t" },
-    { "int_fast32_t", "__CORE__C__TYPE__LITERAL__.int_fast32_t" },
-    { "uint_fast32_t", "__CORE__C__TYPE__LITERAL__.uint_fast32_t" },
-    { "int_fast64_t", "__CORE__C__TYPE__LITERAL__.int_fast64_t" },
-    { "uint_fast64_t", "__CORE__C__TYPE__LITERAL__.uint_fast64_t" },
-
-    { "int_least8_t", "__CORE__C__TYPE__LITERAL__.int_least8_t" },
-    { "uint_least8_t", "__CORE__C__TYPE__LITERAL__.uint_least8_t" },
-    { "int_least16_t", "__CORE__C__TYPE__LITERAL__.int_least16_t" },
-    { "uint_least16_t", "__CORE__C__TYPE__LITERAL__.uint_least16_t" },
-    { "int_least32_t", "__CORE__C__TYPE__LITERAL__.int_least32_t" },
-    { "uint_least32_t", "__CORE__C__TYPE__LITERAL__.uint_least32_t" },
-    { "int_least64_t", "__CORE__C__TYPE__LITERAL__.int_least64_t" },
-    { "uint_least64_t", "__CORE__C__TYPE__LITERAL__.uint_least64_t" },
-
-    { "intptr_t", "__CORE__C__TYPE__LITERAL__.intptr_t" },
-    { "uintptr_t", "__CORE__C__TYPE__LITERAL__.uintptr_t" },
-    { "ptrdiff_t", "__CORE__C__TYPE__LITERAL__.ptrdiff_t" },
-
-    { "intmax_t", "__CORE_C_LITERAL__.intmax_t" },
-    { "uintmax_t", "__CORE_C_LITERAL__.uintmax_t" },
-};
-
-std::unordered_map<std::string, void*> unallowed_keywords_in_odin = {
-    { "i8", nullptr },
-    { "i16", nullptr },
-    { "i32", nullptr },
-    { "i64", nullptr },
-
-    { "u8", nullptr },
-    { "u16", nullptr },
-    { "u32", nullptr },
-    { "u64", nullptr },
-
-    { "f32", nullptr },
-    { "f64", nullptr },
-    { "f128", nullptr },
-
-    { "string", nullptr },
-    { "cstring", nullptr },
-};
 
 int main(int argc, char** argv) {
     // if(argc < 2)
@@ -613,6 +355,10 @@ int main(int argc, char** argv) {
     for (auto& type_def : data.type_defs) {
         // std::cout << "TYPEDEF TYPE NAME: " << type_def.type_name << std::endl;
 
+        if (unallowed_keywords_in_odin.find(type_def.name) != unallowed_keywords_in_odin.end()) {
+            type_def.name += "_t";
+        }
+
         bool is_struct = type_def.type_name.find("struct ") != std::string::npos;
         bool is_enum = type_def.type_name.find("enum ") != std::string::npos;
 
@@ -623,7 +369,7 @@ int main(int argc, char** argv) {
         type_def.anonymous = false;
 
         bool is_unnamed = type_def.type_name.find("unnamed ") != std::string::npos || 
-                            type_def.type_name.find("anonymous ") != std::string::npos;
+                          type_def.type_name.find("anonymous ") != std::string::npos;
         type_def.pointer_level = std::count(type_def.type_name.begin(), type_def.type_name.end(), '*');
 
         if (is_enum) {
@@ -748,7 +494,7 @@ int main(int argc, char** argv) {
     std::ofstream file("../../test.odin");
 
     file << "package test\n";
-    file << "import __CORE__C__TYPE__LITERAL__ \"core:c\"\n\n";
+    file << "import " << __C_TYPE_LITERAL << " \"core:c\"\n\n";
 
     std::function<std::string(std::string)> convert_type_name_to_string;
 
@@ -779,7 +525,7 @@ int main(int argc, char** argv) {
 
             auto pointer_level = 0;
 
-            auto found_pointer=  false;
+            auto found_pointer = false;
 
             while (const_index != std::string::npos) {
                 type_name = type_name.erase(const_index, 1);
@@ -795,9 +541,11 @@ int main(int argc, char** argv) {
 
             ss << std::string(pointer_level, '^');
 
-            std::cout << "TYPE: " << type_name << "|" << std::endl;
+            if (unallowed_keywords_in_odin.find(type_name) != unallowed_keywords_in_odin.end()) {
+                type_name += "_t";
+            }
 
-
+            // std::cout << "TYPE: " << type_name << "|" << std::endl;
 
             if (c_keyword_to_odin.find(type_name) != c_keyword_to_odin.end()) {
                 ss << c_keyword_to_odin[type_name];
@@ -827,7 +575,13 @@ int main(int argc, char** argv) {
             ss << '\n'; 
 
         for (auto field : decl.fields) {
-            ss << std::string(data->recursion_level+1, '\t') << field.name << ": ";
+            ss << std::string(data->recursion_level+1, '\t');
+
+            if (field.name == "_" && !field.is_type_named) {
+                ss << "using ";
+            }
+
+            ss << field.name << ": ";
 
             switch (field.is_type_named) {
                 case true:
@@ -871,7 +625,7 @@ int main(int argc, char** argv) {
             if (type_def.is == TypeDef::IS::ENUM)
                 break;
 
-            file << type_def.name << " :: distinct ";
+            file << type_def.name << " :: ";
             switch (type_def.is) {
                 case TypeDef::IS::STRUCT:
                     file << convert_struct_decl_to_string(&data, type_def.struct_decl) << "\n\n";
@@ -882,6 +636,8 @@ int main(int argc, char** argv) {
                     break;
 
                 case TypeDef::IS::NEITHER:
+                    file << "distinct ";
+
                     file << convert_type_name_to_string(type_def.type_name) << "\n\n";
 
                     break;
