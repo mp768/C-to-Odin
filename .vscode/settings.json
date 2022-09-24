@@ -51,7 +51,9 @@
         "unordered_map": "cpp",
         "xhash": "cpp",
         "fstream": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "clang-c/Index.h": "c",
+        "variant": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

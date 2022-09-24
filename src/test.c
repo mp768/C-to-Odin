@@ -1,6 +1,8 @@
 #include "stdio.h"
 #include "stdint.h"
 
+#define DELLO 1 << 30
+
 typedef struct There {
     int c;
 } There;
@@ -22,14 +24,18 @@ typedef struct {
     Hello hi;
 }* HI;
 
+typedef enum {
+    Some = -1,
+    Enum = (DELLO),
+} SomeEnum;
+
 typedef Hello* HelloPtr;
 
 typedef int32_t i32;
 
-typedef enum {
-    Some,
-    Enum,
-} SomeEnum;
+typedef int*(*INT_PROC)(const int* a, struct Hello, HelloPtr);
+
+void func(struct { int a; } a);
 
 typedef struct A {
     struct {

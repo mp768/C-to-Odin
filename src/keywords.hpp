@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <string>
 
-#define __C_TYPE_LITERAL "__CORE__C__TYPE__LITERAL__"
+#define __C_TYPE_LITERAL "__ODIN_CORE_C__"
 
 std::unordered_map<std::string, std::string> c_keyword_to_odin = {
     { "int", __C_TYPE_LITERAL ".int" },
