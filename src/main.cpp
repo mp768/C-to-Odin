@@ -13,21 +13,17 @@
 
 #define DEBUG_PRINT
 
-int main(int argc, char** argv) {
-    // if(argc < 2)
-    //     return -1;
-    //
-    // char* file_path = argv[1];
-
-    char* file_path = "../../src/test.ast";
-
+bool parse_file(std::string file_path, SaveData& data) {
     CXIndex index        = clang_createIndex(0, 1);
-    CXTranslationUnit tu = clang_createTranslationUnit(index, file_path);
+    CXTranslationUnit tu = clang_parseTranslationUnit(index, file_path.c_str(), nullptr, 0, nullptr, 0, CXTranslationUnit_Flags::CXTranslationUnit_KeepGoing);
+
+    data.idxs.push_back(index);
+    data.tus.push_back(tu);
     
     std::cout << "EVALUATING TRANSLATION UNIT" << std::endl;
     std::cout << "RESULT: " << tu << std::endl;
     if(!tu)
-        return -1;
+        return false;
   
     CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
 
@@ -45,8 +41,6 @@ int main(int argc, char** argv) {
         &queue
     );
 
-    SaveData data;
-
     for (auto entry : queue.data) {
         switch (entry.is) {
             case DataEntry::IS::ENUM:
@@ -55,8 +49,12 @@ int main(int argc, char** argv) {
 
                 break;
 
+            case DataEntry::IS::UNION:
+                recurse_struct(&data, entry.name, entry.cursor, true);
+                break;
+
             case DataEntry::IS::STRUCT:
-                recurse_struct(&data, entry.name, entry.cursor);
+                recurse_struct(&data, entry.name, entry.cursor, false);
                 break;
 
             case DataEntry::IS::TYPEDEF:
@@ -66,9 +64,9 @@ int main(int argc, char** argv) {
 
                     type_def.name = entry.name;
 
-                    CXType type = clang_getTypedefDeclUnderlyingType(entry.cursor);
+                    type_def.type = clang_getTypedefDeclUnderlyingType(entry.cursor);
 
-                    type_def.type_name = (char*)clang_getTypeSpelling(type).data;
+                    type_def.type_name = (char*)clang_getTypeSpelling(type_def.type).data;
                     type_def.struct_decl = data.struct_decls.size() != 0 ?
                                            data.struct_decls[data.struct_decls.size()-1] :
                                            StructDecl {};
@@ -98,17 +96,22 @@ int main(int argc, char** argv) {
         }
     }
 
-    for (auto decl : data.struct_decls) {
-        print_struct(&data, decl);
-    }
+    // for (auto decl : data.struct_decls) {
+    //     print_struct(&data, decl);
+    // }
 
-    for (auto type_def : data.type_defs) {
-        print_type_def(&data, type_def);
-    }
+    // for (auto type_def : data.type_defs) {
+    //     print_type_def(&data, type_def);
+    // }
 
-    std::ofstream file("../../test.odin");
+    return true;
+}
 
-    file << "package test\n";
+// TODO: worry about library paths later
+void save_to_file(SaveData& data, std::string file_name, std::string package_name) {
+    std::ofstream file(file_name);
+
+    file << "package " << package_name << "\n";
     file << "import " << __C_TYPE_LITERAL << " \"core:c\"\n\n";
 
     for (auto type_def : data.type_defs) {
@@ -128,7 +131,7 @@ int main(int argc, char** argv) {
                 case TypeDef::IS::NEITHER:
                     file << "distinct ";
 
-                    file << convert_type_name_to_string(type_def.type_name) << "\n\n";
+                    file << convert_type_name_to_string(&data, type_def.type_name) << "\n\n";
 
                     break;
             }
@@ -138,6 +141,8 @@ int main(int argc, char** argv) {
     }
 
     for (auto decl : data.enum_decls) {
+        strip_prefix(decl.name, data.remove_prefixes);
+
         if (decl.name != "" && data.type_names.find(decl.name) == data.type_names.end()) {
             file << decl.name << " :: ";
             file << convert_enum_decl_to_string(&data, decl);
@@ -148,6 +153,8 @@ int main(int argc, char** argv) {
     }
 
     for (auto decl : data.struct_decls) {
+        strip_prefix(decl.name, data.remove_prefixes);
+
         if (decl.name != "" && data.type_names.find(decl.name) == data.type_names.end()) {
             file << decl.name << " :: ";
             file << convert_struct_decl_to_string(&data, decl);
@@ -158,55 +165,35 @@ int main(int argc, char** argv) {
     }
 
     for (auto decl : data.function_decls) {
-        std::cout << decl.name << " (";
-        for (auto argument : decl.arguments) {
-            std::cout << argument.name << ": ";
-
-            if (std::holds_alternative<TypeNamed>(argument.type)) {
-                auto type_named = std::get<TypeNamed>(argument.type);
-                
-                std::cout << (type_named.type_name.find("proc") != std::string::npos ? 
-                              type_named.type_name :
-                              convert_type_name_to_string(type_named.type_name));
-            } else {
-                auto type_not_named = std::get<TypeNotNamed>(argument.type);
-
-                std::cout << std::string(type_not_named.pointer_level, '^') << 
-                              (type_not_named.type == FieldType::ENUM ?
-                              convert_enum_decl_to_string(&data, data.enum_decls[type_not_named.index]) :
-                              convert_struct_decl_to_string(&data, data.struct_decls[type_not_named.index]));
-            }
-        }
-
-        std::cout << ")";
-
-        if (std::holds_alternative<TypeNamed>(decl.return_type)) {
-            auto type_named = std::get<TypeNamed>(decl.return_type);
-
-            trim_spaces_string(type_named.type_name);
-
-            if (type_named.type_name != "") {
-                std::cout << " -> ";
-                std::cout << convert_type_name_to_string(type_named.type_name);
-            }
-        } else {
-            auto type_not_named = std::get<TypeNotNamed>(decl.return_type);
-
-            std::cout << " -> " << std::string(type_not_named.pointer_level, '^');
-
-            if (type_not_named.type == FieldType::ENUM) {
-                std::cout << convert_enum_decl_to_string(&data, data.enum_decls[type_not_named.index]);
-            } else {
-                std::cout << convert_struct_decl_to_string(&data, data.struct_decls[type_not_named.index]);
-            }
-        }
-
-        std::cout << '\n';
+        if (decl.name != "main")
+            file << convert_function_decl_to_string(&data, decl) << "\n\n";
     }
 
     file.close();
+}
 
-    clang_disposeTranslationUnit(tu);
-    clang_disposeIndex(index);
+int main(int argc, char** argv) {
+    // if(argc < 2)
+    //     return -1;
+    //
+    // char* file_path = argv[1];
+
+    std::vector<std::string> arguments;
+    for (int i = 0; i < argc; i++) {
+        arguments.push_back(argv[i]);
+    }
+
+    // TODO: Add logic to be able to do more customization with how the generation outputs stuff.
+
+    char* file_path[] = { "../../src/test.c", "../../src/test.h" };
+
+    SaveData data;
+    data.remove_prefixes = { "test_" };
+
+    parse_file(file_path[0], data);
+    parse_file(file_path[1], data);
+
+    save_to_file(data, "../../test.odin", "tester");
+
     return 0;
 }

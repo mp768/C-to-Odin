@@ -37,6 +37,7 @@ struct StructField {
 struct StructDecl {
     std::string name;
     std::vector<StructField> fields;
+    bool is_union;
 };
 
 struct EnumDecl {
@@ -66,6 +67,8 @@ struct TypeDef {
     unsigned int pointer_level;
     StructDecl struct_decl;
     EnumDecl enum_decl;
+    CXType type;
+    CXCursor cursor;
 
     enum class IS {
         STRUCT,
@@ -80,6 +83,7 @@ struct DataEntry {
     enum class IS {
         STRUCT,
         ENUM,
+        UNION,
         TYPEDEF,
         FUNCTION,
         NONE,
@@ -98,8 +102,13 @@ struct SaveData {
     std::vector<EnumDecl> enum_decls;
     std::vector<FunctionDecl> function_decls;
     std::vector<TypeDef> type_defs;
+    std::vector<std::string> remove_prefixes;
+    std::vector<std::string> remove_constant_prefixes;
     std::unordered_map<std::string, std::string> type_names;
     void* current_data;
+    
+    std::vector<CXIndex> idxs;
+    std::vector<CXTranslationUnit> tus;
 
     size_t recursion_level;
 
@@ -108,5 +117,15 @@ struct SaveData {
         type_defs.reserve(8);
         recursion_level = 0;
         current_data = nullptr;
+    }
+
+    ~SaveData() {
+        for (auto idx : idxs) {
+            clang_disposeIndex(idx);
+        }
+
+        for (auto tu : tus) {
+            clang_disposeTranslationUnit(tu);
+        }
     }
 };

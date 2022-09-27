@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\src\main.cpp">
+    <ClCompile Include="C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{909625B8-04DA-3501-8EE0-4DAC2522B8D9}</UniqueIdentifier>
+      <UniqueIdentifier>{DD90BFE0-6FC5-3BE6-AD46-EE7566087952}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
