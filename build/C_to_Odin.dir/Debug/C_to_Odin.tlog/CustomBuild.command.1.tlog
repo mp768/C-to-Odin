@@ -1,6 +1,6 @@
-^C:\USERS\MP725\ONEDRIVE\DOCUMENTS\GAME DEV\C\C TO ODIN\CMAKELISTS.TXT
+^C:\USERS\MP725\ONEDRIVE\DOCUMENTS\_NEW_\ODIN\C-TO-ODIN\CMAKELISTS.TXT
 setlocal
-"C:\Program Files (x86)\CMake\bin\cmake.exe" "-SC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin" "-BC:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build" --check-stamp-file "C:/Users/mp725/OneDrive/Documents/Game Dev/C/C to Odin/build/CMakeFiles/generate.stamp"
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin -BC:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build --check-stamp-file C:/Users/mp725/OneDrive/Documents/_new_/Odin/C-to-Odin/build/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

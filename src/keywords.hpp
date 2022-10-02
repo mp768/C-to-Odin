@@ -9,6 +9,7 @@ std::unordered_map<std::string, std::string> c_keyword_to_odin = {
     { "int", __C_TYPE_LITERAL ".int" },
     { "signed", __C_TYPE_LITERAL ".int" },
     { "unsigned int", __C_TYPE_LITERAL ".uint" },
+    { "_Bool", __C_TYPE_LITERAL ".bool" },
 
     { "char", __C_TYPE_LITERAL ".char" },
     { "signed char", __C_TYPE_LITERAL ".schar" },

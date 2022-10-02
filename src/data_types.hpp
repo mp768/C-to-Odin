@@ -15,12 +15,14 @@ enum class FieldType {
 struct TypeNamed {
     std::string type_name;
     CXType type;
+    std::vector<int> array_sizes;
 };
 
 struct TypeNotNamed {
     size_t index;
     FieldType type;
     int pointer_level;
+    std::vector<int> array_sizes;
 };
 
 struct StructField {
@@ -31,19 +33,23 @@ struct StructField {
     // this will be used if the type of a field is a anonymous or declared struct inside the parent struct.
     TypeNotNamed type_not_named;
 
+    std::vector<std::string> comment_text;
+
     std::string name;
 };
 
 struct StructDecl {
     std::string name;
     std::vector<StructField> fields;
+    std::vector<std::string> comment_text;
     bool is_union;
 };
 
 struct EnumDecl {
     std::string name;
-    // CONSTANT_NAME = IS NEGATIVE, VALUE
-    std::vector<std::tuple<std::string, bool, uint64_t>> constants; 
+    // CONSTANT_NAME = IS NEGATIVE, VALUE // COMMENT
+    std::vector<std::tuple<std::string, bool, uint64_t, std::vector<std::string>>> constants; 
+    std::vector<std::string> comment_text;
 };
 
 struct Argument {
@@ -55,6 +61,7 @@ struct FunctionDecl {
     std::string name;
 
     std::variant<TypeNamed, TypeNotNamed> return_type;
+    std::vector<std::string> comment_text;
 
     std::vector<Argument> arguments;
 };
@@ -69,6 +76,10 @@ struct TypeDef {
     EnumDecl enum_decl;
     CXType type;
     CXCursor cursor;
+    bool is_proc_type;
+    std::vector<int> array_sizes;
+
+    std::vector<std::string> comment_text;
 
     enum class IS {
         STRUCT,
@@ -109,6 +120,10 @@ struct SaveData {
     
     std::vector<CXIndex> idxs;
     std::vector<CXTranslationUnit> tus;
+
+    bool convert_char_pointer_to_cstring;
+    bool seperate_files;
+    std::string package_name;
 
     size_t recursion_level;
 

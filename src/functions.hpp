@@ -4,6 +4,49 @@
 #include "data_types.hpp"
 #define FIND_FUNCTION_PTR(variable) (variable.find("(*") != std::string::npos && variable.find("*)") != std::string::npos)
 #define FIND_ANONYMOUS(variable) (variable.find("anonymous ") != std::string::npos || variable.find("unnamed ") != std::string::npos)
+#define GET_RAW_COMMENT(cursor) std::vector<std::string> comments; { auto range = clang_Cursor_getCommentRange(cursor); if (range.begin_int_data != 0 && range.end_int_data != 0) { std::string comment = (char*)clang_Cursor_getRawCommentText(cursor).data; comments = strip_unnecessary_newline(comment); }  }
+#define FIND_ARRAY_BRACES(variable) (variable.find("[") != std::string::npos && variable.find("]") != std::string::npos)
+
+static inline auto strip_unnecessary_newline(std::string& str) -> std::vector<std::string> {
+    auto r_index = str.find('\r');
+
+    while (r_index != std::string::npos) {
+        str.erase(r_index, 1);
+
+        r_index = str.find('\r');
+    }
+
+    auto newline_index = str.find('\n');
+
+    while (newline_index != std::string::npos) {
+        if (newline_index == str.size()-1 || newline_index == 0)
+            str = str.erase(newline_index, 1);
+        else if (str[newline_index+1] != '\n') {
+            str[newline_index] = '\b';
+            // str = str.erase(newline_index+1, 1);
+        }
+        
+        newline_index = str.find('\n');
+    }
+
+    auto b_index = str.find('\b');
+
+    while (b_index != std::string::npos) {
+        str[b_index] = '\n';
+
+        b_index = str.find('\b');
+    }
+
+    std::stringstream ss(str);
+    std::string STR;
+    std::vector<std::string> results;
+
+    while(std::getline(ss, STR, '\n')) {
+        results.push_back(STR);
+    }
+
+    return results;
+}
 
 static inline void get_rid_of_const(std::string& type_name) {
     auto const_index = type_name.find("const ");
@@ -84,31 +127,58 @@ static inline void strip_enum_and_struct(std::string& str) {
         str = str.erase(union_idx, 5);
 }
 
-static inline void strip_prefix(std::string& str, std::vector<std::string> remove_prefixes) {
-    for (auto prefix : remove_prefixes) {
-        auto prefix_index = str.find(prefix);
+static inline auto strip_prefix(std::string& str, std::vector<std::string> remove_prefixes) -> std::string {
+    std::string prefix_stripped = "";
 
-        if (prefix_index != std::string::npos && prefix_index == 0) {
-            str = str.erase(prefix_index, prefix.length());
+    size_t prefix_index = 0;
+
+    while (prefix_index != std::string::npos) {
+        prefix_index = std::string::npos;
+
+        for (auto prefix : remove_prefixes) {
+            prefix_index = str.find(prefix);
+
+            if (prefix_index != std::string::npos && prefix_index == 0) {
+                str = str.erase(prefix_index, prefix.length());
+                prefix_stripped += prefix;
+            }
         }
     }
+
+    return prefix_stripped;
 }
 
 static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std::string fptr) -> std::string;
-static inline void recurse_enum(SaveData* data, std::string name, CXCursor cursor);
-static inline void recurse_struct(SaveData* data, std::string name, CXCursor cursor, bool is_union);
+static inline void recurse_enum(SaveData* data, std::string name, CXCursor cursor, bool declaring = false);
+static inline void recurse_struct(SaveData* data, std::string name, CXCursor cursor, bool is_union, bool declaring = false);
 
 // this shouldn't be `to_string` but I don't want to chnage it right now because I'm lazy.
 static inline auto convert_type_to_string(SaveData* data, CXType type) -> std::variant<TypeNamed, TypeNotNamed> {
     auto type_name = std::string((char*)clang_getTypeSpelling(type).data);
+
+    std::vector<int> array_sizes;
 
     if (FIND_FUNCTION_PTR(type_name)) {
         type_name = convert_c_fptr_to_odin_fptr(data, type, type_name);
 
         return TypeNamed {
             type_name,
-            type
+            type,
+            array_sizes,
         };
+    }
+
+
+    if (FIND_ARRAY_BRACES(type_name)) {
+        auto array_size = clang_getArraySize(type);
+
+        while (array_size != -1) {
+            array_sizes.push_back(array_size);
+            type = clang_getArrayElementType(type);
+            array_size = clang_getArraySize(type);
+        }
+
+        std::reverse(array_sizes.begin(), array_sizes.end());
     }
 
     auto is_enum = type_name.find("enum ") != std::string::npos;
@@ -119,13 +189,18 @@ static inline auto convert_type_to_string(SaveData* data, CXType type) -> std::v
     if (is_named) {
         return TypeNamed {
             type_name,
-            type
+            type,
+            array_sizes,
         };
     }
 
-    auto if_struct_or_enum = clang_getTypeDeclaration(type);
-
     auto pointer_level = get_rid_of_pointer(type_name);
+
+    for (auto i = 0; i < pointer_level; i++) {
+        type = clang_getPointeeType(type);
+    }
+
+    auto if_struct_or_enum = clang_getTypeDeclaration(type);
 
     if (is_enum) {
         recurse_enum(data, "", if_struct_or_enum);
@@ -136,7 +211,8 @@ static inline auto convert_type_to_string(SaveData* data, CXType type) -> std::v
     return TypeNotNamed {
         (is_enum ? data->enum_decls.size()-1 : data->struct_decls.size()-1),
         (is_enum ? FieldType::ENUM : FieldType::STRUCT),
-        pointer_level
+        pointer_level,
+        array_sizes,
     };
 }
 
@@ -192,11 +268,16 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
 
             final_str << std::string(type.pointer_level, '^'); 
 
+            for (auto array_size : type.array_sizes) {
+                final_str << "[" << array_size << "]";
+            }
+
             if (type.type == FieldType::ENUM) {
                 final_str << convert_enum_decl_to_string(data, data->enum_decls[type.index], false);
             } else {
                 final_str << convert_struct_decl_to_string(data, data->struct_decls[type.index], false);
             }
+            
         }
 
         final_str << ", ";
@@ -246,6 +327,27 @@ static inline auto convert_type_name_to_string(SaveData* data, std::string type_
     
     get_rid_of_const(type_name);
 
+    std::vector<std::string> array_size_strings;
+
+    while (FIND_ARRAY_BRACES(type_name)) {
+        auto starting_index = type_name.find("[");
+        auto ending_index = type_name.find("]");
+
+        auto number = type_name.substr(starting_index+1, ending_index-starting_index);
+
+        std::string array_size_string = "[" + number;
+        array_size_strings.push_back(array_size_string);
+
+        type_name = type_name.erase(starting_index, ending_index-starting_index+1);
+    }
+
+    std::reverse(array_size_strings.begin(), array_size_strings.end());
+
+    for (auto array_size_string : array_size_strings) {
+        std::cout << type_name << ": " << array_size_string << std::endl;
+        ss << array_size_string;
+    }
+
     // std::cout << "TYPE BEFORE: " << type_name << std::endl;
 
     {
@@ -264,7 +366,7 @@ static inline auto convert_type_name_to_string(SaveData* data, std::string type_
             type_name = "rawptr";
         }
 
-        if (type_name == "char" && pointer_level >= 1) {
+        if (type_name == "char" && data->convert_char_pointer_to_cstring && pointer_level >= 1) {
             pointer_level -= 1;
             type_name = "cstring";
         }
@@ -288,15 +390,19 @@ static inline auto convert_enum_decl_to_string(SaveData* data, EnumDecl decl, bo
         return ss.str();
     }
 
-    if (decl.name != "")
-        ss << " // Enum \"" << decl.name << "\"\n";
-    else if (add_new_line_to_each_field)
+    // if (decl.comment_text != "" && add_new_line_to_each_field) 
+    //     ss << decl.comment_text;
+    // else if (decl.comment_text != "")
+    //     ss << "/* " << decl.comment_text << " */";
+
+    if (add_new_line_to_each_field)
         ss << '\n'; 
 
     for (auto constant : decl.constants) {
         auto name = std::get<0>(constant);
         auto is_negative = std::get<1>(constant);
         auto value = std::get<2>(constant);
+        auto comment_text_ = std::get<3>(constant);
 
         strip_prefix(name, data->remove_constant_prefixes);
 
@@ -304,6 +410,17 @@ static inline auto convert_enum_decl_to_string(SaveData* data, EnumDecl decl, bo
             ss << std::string(data->recursion_level+1, '\t');
         else 
             ss << " ";
+
+        for (auto comment_text : comment_text_) {
+            if (comment_text != "") {
+                if (add_new_line_to_each_field) {
+                    ss << comment_text << '\n';
+                    ss << std::string(data->recursion_level+1, '\t');
+                } else {
+                    ss << "/* " << comment_text << " */ ";
+                }
+            }
+        }
 
         ss << name << " = " << std::string(is_negative, '-') << value << ','; 
         
@@ -332,14 +449,17 @@ static inline auto convert_struct_decl_to_string(SaveData* data, StructDecl decl
 
     ss << '{';
 
+    // if (decl.comment_text != "" && add_new_line_to_each_field)
+    //     ss << decl.comment_text;
+    // else if (decl.comment_text != "") 
+    //     ss << "/* " << decl.comment_text << " */";
+
     if (decl.fields.size() == 0) {
         ss << '}';
         return ss.str();
     }
 
-    if (decl.name != "")
-        ss << " // Struct \"" << decl.name << "\"\n";
-    else if (add_new_line_to_each_field)
+    if (add_new_line_to_each_field)
         ss << '\n'; 
 
     for (auto field : decl.fields) {
@@ -347,6 +467,18 @@ static inline auto convert_struct_decl_to_string(SaveData* data, StructDecl decl
             ss << std::string(data->recursion_level+1, '\t');
         else 
             ss << " ";
+        
+        for (auto comment_text : field.comment_text) {
+            if (comment_text != "") {
+                if (add_new_line_to_each_field) {
+                    ss << comment_text << '\n';
+                    ss << std::string(data->recursion_level+1, '\t');
+                }
+                else {
+                    ss << "/* " << comment_text << " */ ";
+                }
+            }
+        }
 
         if (field.name == "_" && !field.is_type_named) {
             ss << "using ";
@@ -407,11 +539,18 @@ static inline auto convert_struct_decl_to_string(SaveData* data, StructDecl decl
 static inline auto convert_function_decl_to_string(SaveData* data, FunctionDecl decl) -> std::string {
     std::stringstream ss;
 
-    strip_prefix(decl.name, data->remove_prefixes);
+    // strip_prefix(decl.name, data->remove_prefixes);
 
-    ss << decl.name << " :: proc(";
+    for (auto comment_text : decl.comment_text) {
+        if (comment_text != "") {
+            ss << std::string(data->recursion_level, '\t') << comment_text << '\n';
+        }
+    }
+
+    ss << std::string(data->recursion_level, '\t') << decl.name << " :: proc(";
     for (auto argument : decl.arguments) {
-        ss << argument.name << ": ";
+        if (argument.name != "")
+            ss << argument.name << ": ";
 
         if (std::holds_alternative<TypeNamed>(argument.type)) {
             auto type_named = std::get<TypeNamed>(argument.type);
@@ -465,15 +604,41 @@ static inline auto convert_function_decl_to_string(SaveData* data, FunctionDecl 
 static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
     // std::cout << "TYPEDEF TYPE NAME: " << type_def.type_name << std::endl;
 
+    GET_RAW_COMMENT(type_def.cursor);
+    type_def.comment_text = comments;
+
     strip_prefix(type_def.name, data.remove_prefixes);
 
     if (unallowed_keywords_in_odin.find(type_def.name) != unallowed_keywords_in_odin.end()) {
         type_def.name += "_t";
     }
 
+    // if (type_def.is_proc_type) 
+    //     return;
+
     if (FIND_FUNCTION_PTR(type_def.type_name)) {
+        // std::cout << "TYPEDEF NAME: " << type_def.name << std::endl;
+        // std::cout << "IS TYPE: " << (int)type_def.is << std::endl;
+
+        type_def.is_proc_type = true;
         type_def.type_name = convert_c_fptr_to_odin_fptr(&data, type_def.type, type_def.type_name);
+        // std::cout << "IS TYPE (AFTER): " << (int)type_def.is << std::endl;
+        // std::cout << "TYPENAME (AFTER): " << type_def.type_name << std::endl;
         return;
+    }
+
+    if (FIND_ARRAY_BRACES(type_def.type_name)) {
+        auto type = type_def.type;
+        auto array_size = clang_getArraySize(type);
+
+        while (array_size != -1) {
+            type_def.array_sizes.push_back(array_size);
+            type = clang_getArrayElementType(type);
+
+            array_size = clang_getArraySize(type);
+        }
+
+        std::reverse(type_def.array_sizes.begin(), type_def.array_sizes.end());
     }
 
     bool is_struct = type_def.type_name.find("struct ") != std::string::npos;
@@ -548,6 +713,15 @@ static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
 static inline void parse_function(SaveData* data, std::string name, CXCursor cursor) {
     FunctionDecl decl;
 
+    for (auto decl : data->function_decls) {
+        if (decl.name == name) {
+            return;
+        }
+    }
+
+    GET_RAW_COMMENT(cursor);
+    decl.comment_text = comments;
+
     decl.name = name;
 
     auto num_arguments = clang_Cursor_getNumArguments(cursor);
@@ -579,10 +753,13 @@ static inline void parse_function(SaveData* data, std::string name, CXCursor cur
 }
 
 // 'recurse' doesn't really make sense here, but I couldn't figure out what to name it.
-static inline void recurse_enum(SaveData* data, std::string name, CXCursor cursor) {
+static inline void recurse_enum(SaveData* data, std::string name, CXCursor cursor, bool declaring) {
     EnumDecl decl;
 
     decl.name = name;
+    GET_RAW_COMMENT(cursor);
+
+    decl.comment_text = comments;
 
     data->current_data = &decl;
     
@@ -595,6 +772,7 @@ static inline void recurse_enum(SaveData* data, std::string name, CXCursor curso
                 case CXCursor_EnumConstantDecl:
                     {
                         auto decl = (EnumDecl*)data->current_data;
+                        GET_RAW_COMMENT(cursor);
 
                         std::string name = (char*)clang_getCursorSpelling(cursor).data;
                         unsigned long long value = clang_getEnumConstantDeclUnsignedValue(cursor);
@@ -602,7 +780,7 @@ static inline void recurse_enum(SaveData* data, std::string name, CXCursor curso
 
                         bool is_negative = (long long)value > value2;
 
-                        decl->constants.push_back({ name, is_negative, (uint64_t)(is_negative ? -value2 : value) });
+                        decl->constants.push_back({ name, is_negative, (uint64_t)(is_negative ? -value2 : value), comments });
                     }
 
                     break;
@@ -613,15 +791,31 @@ static inline void recurse_enum(SaveData* data, std::string name, CXCursor curso
         data
     );
 
-    data->enum_decls.push_back(decl);
+    auto i = 0;
+    auto found = false;
+    for (auto decl : data->enum_decls) {
+        if (decl.name == name) {
+            found = true;
+            break;
+        }
+
+        i++;
+    }
+
+    if (found && name != "" && declaring)
+        data->enum_decls[i] = decl;
+    else
+        data->enum_decls.push_back(decl);
 }
 
-static inline void recurse_struct(SaveData* data, std::string name, CXCursor cursor, bool is_union) {
+static inline void recurse_struct(SaveData* data, std::string name, CXCursor cursor, bool is_union, bool declaring) {
     StructDecl decl; 
 
     decl.name = name;
     decl.fields.reserve(1);
     decl.is_union = is_union;
+    GET_RAW_COMMENT(cursor);
+    decl.comment_text = comments;
 
     data->current_data = &decl;
 
@@ -635,6 +829,8 @@ static inline void recurse_struct(SaveData* data, std::string name, CXCursor cur
                 case CXCursor_FieldDecl:
                     {
                         StructField field;
+                        GET_RAW_COMMENT(cursor);
+                        field.comment_text = comments;
 
                         auto type = clang_getCursorType(cursor);
 
@@ -725,7 +921,21 @@ static inline void recurse_struct(SaveData* data, std::string name, CXCursor cur
         data
     );
 
-    data->struct_decls.push_back(decl);
+    int i = 0;
+    bool found = false;
+    for (auto decl : data->struct_decls) {
+        if (decl.name == name) {
+            found = true;
+            break;
+        }
+
+        i++;
+    }
+
+    if (found && name != "" && declaring) 
+        data->struct_decls[i] = decl;
+    else
+        data->struct_decls.push_back(decl);
 }
 
 static inline CXVisitorResult build_queue(CXCursor cursor, CXCursor parent, CXClientData client_data) {

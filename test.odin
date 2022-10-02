@@ -1,12 +1,13 @@
 package tester
 import _c_ "core:c"
 
-There :: struct { // Struct "There"
+There :: struct {
 	c: _c_.int,
 }
 
-Hello :: struct { // Struct "Hello"
-	a: _c_.int,
+// this is hello
+Hello :: struct {
+	a: [2][1]_c_.int,
 	b: _c_.int,
 	c: There,
 	f: ^struct {
@@ -16,7 +17,7 @@ Hello :: struct { // Struct "Hello"
 }
 
 HI :: struct {
-	str: cstring,
+	str: ^_c_.char,
 	hi: Hello,
 }
 
@@ -27,13 +28,19 @@ SomeEnum :: enum {
 
 HelloPtr :: distinct ^Hello
 
-i32_t :: distinct i32
+i32_t :: distinct [4][3][1]i32
 
-INT_PROC :: distinct proc(^_c_.int, Hello, HelloPtr) -> ^_c_.int
+INT_PROC :: distinct proc([3]^_c_.int, [2]Hello, HelloPtr) -> ^_c_.int
 
-SOME_PROC :: struct {
-	b: _c_.int,
-}
+// THIS IS SOME_PROC, THIS FUNCTION DOES SOMETHING
+// I REALLY DON'T KNOW WHAT IT DOES, BUT IT DOES
+// SOMETHING I GUESS
+/*
+* MULTI-LINE COMMENT
+* WOOOWOWOWOOW
+* IT'S AMAZING !!??!?!?!?!??!?!?!?
+*/
+SOME_PROC :: distinct ^proc(^struct { b: _c_.int, }) -> ^^^rawptr
 
 SUB_UNION_OMG :: struct #raw_union {
 	a: _c_.int,
@@ -43,7 +50,7 @@ SUB_UNION_OMG :: struct #raw_union {
 	},
 }
 
-STUPID_STRUCT :: struct { // Struct "STUPID_STRUCT"
+STUPID_STRUCT :: struct {
 	str: ^_c_.uchar,
 	some_data: ^^rawptr,
 	hi: Hello,
@@ -55,9 +62,11 @@ EVEN_STUPIDER_STRUCT :: struct {
 	stupid: STUPID_STRUCT,
 }
 
-A :: struct { // Struct "A"
+// TYPEDEF A IS A BUNCH OF A
+A :: struct {
 	using _: struct {
 		a: i32,
+		vec3: [3]_c_.float,
 	},
 }
 
@@ -66,17 +75,40 @@ SUB_CONTENT :: struct {
 	b: _c_.int,
 }
 
-func :: proc(a: struct { a: i32_t, }) -> rawptr --- 
+JOOO :: struct {
+	a: _c_.double,
+	b: i64,
+}
 
-func2 :: proc(b: _c_.int, d: _c_.float) -> _c_.int --- 
+@(default_calling_convention = "c", link_prefix = "test_")
+foreign __LIB__ {
+	// func
+	func :: proc(a: struct { a: i32_t, }) -> rawptr --- 
+	// func4
+	// what the func4
+	func4 :: proc(ptr: ^^^STUPID_STRUCT) -> ^STUPID_STRUCT --- 
+	// func5
+	// what the func5
+	func5 :: proc(ptr: [2]^STUPID_STRUCT, a: _c_.int, b: _c_.float, h: _c_.double) -> ^EVEN_STUPIDER_STRUCT --- 
+	add :: proc(a: _c_.int, b: _c_.int) -> _c_.int --- 
+}
 
-func3 :: proc(ADD: proc(_c_.int, _c_.int) -> _c_.int, SUB: proc(_c_.int, _c_.int) -> _c_.int) --- 
+@(default_calling_convention = "c", link_prefix = "test_something_")
+foreign __LIB__ {
+	// func2
+	func2 :: proc(b: _c_.int, d: _c_.float) -> _c_.int --- 
+}
 
-func4 :: proc(ptr: ^^^STUPID_STRUCT) -> ^STUPID_STRUCT --- 
+@(default_calling_convention = "c", link_prefix = "")
+foreign __LIB__ {
+	sub :: proc(content: ^SUB_CONTENT) -> _c_.int --- 
+}
 
-func5 :: proc(ptr: ^STUPID_STRUCT, a: _c_.int, b: _c_.float, h: _c_.double) -> ^EVEN_STUPIDER_STRUCT --- 
-
-sub :: proc(content: ^SUB_CONTENT) -> _c_.int --- 
-
-add :: proc(a: _c_.int, b: _c_.int) -> _c_.int --- 
+@(default_calling_convention = "c", link_prefix = "something_test_")
+foreign __LIB__ {
+	// THIS IS BOUND TO SOMETHING I JUST IDK WHAT
+	// this does something so cool
+	// you just got to see it.
+	func3 :: proc(ADD: proc(_c_.int, _c_.int) -> _c_.int, SUB: proc(_c_.int, _c_.int) -> _c_.int) --- 
+}
 
