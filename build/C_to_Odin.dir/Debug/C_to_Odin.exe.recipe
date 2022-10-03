@@ -2,10 +2,10 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\x64\Debug\ZERO_CHECK</FullPath>
+      <FullPath>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>C:\Users\mp725\OneDrive\Documents\_new_\Odin\C-to-Odin\build\Debug\C_to_Odin.exe</FullPath>
+      <FullPath>C:\Users\mp725\OneDrive\Documents\Game Dev\C\C to Odin\build\Debug\C_to_Odin.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

@@ -88,9 +88,11 @@ std::unordered_map<std::string, void*> unallowed_keywords_in_odin = {
     { "cstring", nullptr },
 
     { "in", nullptr },
+    { "when", nullptr },
     { "not_in", nullptr },
     { "import", nullptr },
     { "foreign", nullptr },
     { "proc", nullptr },
     { "package", nullptr },
+    { "context", nullptr },
 };

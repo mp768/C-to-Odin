@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "data_types.hpp"
-#define FIND_FUNCTION_PTR(variable) (variable.find("(*") != std::string::npos && variable.find("*)") != std::string::npos)
+#define FIND_FUNCTION_PTR(variable) (variable.find("(*") != std::string::npos && (variable.find("*)") != std::string::npos || variable.find("])") != std::string::npos))
 #define FIND_ANONYMOUS(variable) (variable.find("anonymous ") != std::string::npos || variable.find("unnamed ") != std::string::npos)
 #define GET_RAW_COMMENT(cursor) std::vector<std::string> comments; { auto range = clang_Cursor_getCommentRange(cursor); if (range.begin_int_data != 0 && range.end_int_data != 0) { std::string comment = (char*)clang_Cursor_getRawCommentText(cursor).data; comments = strip_unnecessary_newline(comment); }  }
 #define FIND_ARRAY_BRACES(variable) (variable.find("[") != std::string::npos && variable.find("]") != std::string::npos)
@@ -51,11 +51,19 @@ static inline auto strip_unnecessary_newline(std::string& str) -> std::vector<st
 static inline void get_rid_of_const(std::string& type_name) {
     auto const_index = type_name.find("const ");
 
+    #if DEBUG_PRINT
+    std::cout << "TYPE NAME BEFORE REMOVEMENT OF CONST: " << type_name << std::endl; 
+    #endif
+
     auto decrease = false;
 
     while (const_index != std::string::npos) {
         type_name = type_name.erase(const_index, (decrease ? 5 : 6));
         const_index = type_name.find("const");
+
+        #if DEBUG_PRINT 
+        std::cout << "PROGRESS ON CONST REMOVING: " << type_name << std::endl;
+        #endif 
 
         decrease = true;
     }
@@ -82,6 +90,10 @@ static inline auto get_rid_of_pointer(std::string& type_name) -> int {
         trim_spaces_string(type_name);
     }
 
+    #if DEBUG_PRINT 
+    std::cout << "TRIMMED POINTER FOR: " << type_name << std::endl;
+    #endif
+
     return pointer_level;
 }
 
@@ -93,8 +105,14 @@ static inline void trim_spaces_string(std::string& type_name) {
             type_name = type_name.erase(space_index, 1);
         else if (type_name[space_index+1] != ' ')
             type_name[space_index] = '\b';
+        else 
+            type_name[space_index] = '\b';
         
         space_index = type_name.find(' ');
+
+        #if DEBUG_PRINT
+        std::cout << "CURRENT TRIMMING OF SPACES: " << type_name << std::endl;
+        #endif
     }
 
     auto b_index = type_name.find('\b');
@@ -132,6 +150,7 @@ static inline auto strip_prefix(std::string& str, std::vector<std::string> remov
 
     size_t prefix_index = 0;
 
+    auto i = 0;
     while (prefix_index != std::string::npos) {
         prefix_index = std::string::npos;
 
@@ -142,6 +161,13 @@ static inline auto strip_prefix(std::string& str, std::vector<std::string> remov
                 str = str.erase(prefix_index, prefix.length());
                 prefix_stripped += prefix;
             }
+        }
+
+        i++;
+
+        if (i > 1000) {
+            // just give up after a while.
+            break;
         }
     }
 
@@ -187,6 +213,7 @@ static inline auto convert_type_to_string(SaveData* data, CXType type) -> std::v
     auto is_named = !FIND_ANONYMOUS(type_name);
 
     if (is_named) {
+        strip_enum_and_struct(type_name);
         return TypeNamed {
             type_name,
             type,
@@ -218,7 +245,7 @@ static inline auto convert_type_to_string(SaveData* data, CXType type) -> std::v
 
 static inline auto convert_enum_decl_to_string(SaveData* data, EnumDecl decl, bool add_new_line_to_each_field = true) -> std::string;
 static inline auto convert_struct_decl_to_string(SaveData* data, StructDecl decl, bool add_new_line_to_each_field = true) -> std::string;
-static inline auto convert_type_name_to_string(SaveData* data, std::string type_name) -> std::string;
+static inline auto convert_type_name_to_string(SaveData* data, CXType type, std::string type_name) -> std::string;
 
 static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std::string fptr) -> std::string {
     if (!FIND_FUNCTION_PTR(fptr)) {
@@ -226,6 +253,20 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
     }
 
     std::stringstream final_str;
+
+    // to handle the potential possibility that a lunatic would create a typedef of a function pointer, and want more than 1.
+    {
+        auto array_size = clang_getArraySize(type);
+
+        while (array_size != -1) {
+            final_str << "[" << array_size << "]";
+
+            type = clang_getArrayElementType(type);
+            array_size = clang_getArraySize(type);
+        }
+
+        fptr = (char*)clang_getTypeSpelling(type).data;
+    }
 
     {
         auto starting_position = fptr.find("(*");
@@ -236,7 +277,10 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
         auto pointer_level = get_rid_of_pointer(pointers);
 
         final_str << std::string(pointer_level-1, '^');
+
+        #if DEBUG_PRINT
         std::cout << "TYPE SPELLING: " << (char*)clang_getTypeSpelling(type).data << std::endl;
+        #endif
 
         // std::cout << "CURSOR TYPENAME: " << (char*)clang_getCursorSpelling(cursor).data << std::endl;
 
@@ -249,9 +293,11 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
         // cursor = clang_getTypeDeclaration(type);
     }
 
+    #if DEBUG_PRINT
     std::cout << "TYPE SPELLING: " << (char*)clang_getTypeSpelling(type).data << std::endl;
+    #endif
 
-    final_str << "proc(";
+    final_str << "proc \"c\" (";
 
     auto argument_amount = clang_getNumArgTypes(type);
 
@@ -262,7 +308,7 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
 
         if (std::holds_alternative<TypeNamed>(_type)) {
             auto type = std::get<TypeNamed>(_type);
-            final_str << convert_type_name_to_string(data, type.type_name);
+            final_str << convert_type_name_to_string(data, type.type, type.type_name);
         } else {
             auto type = std::get<TypeNotNamed>(_type);
 
@@ -289,7 +335,11 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
     final_str << ')';
 
     auto return_type_type = clang_getResultType(type);
+
+    #if DEBUG_PRINT
     std::cout << return_type_type.kind << std::endl;
+    #endif
+
     auto return_type = convert_type_to_string(data, return_type_type);
 
     if (std::holds_alternative<TypeNamed>(return_type)) {
@@ -299,7 +349,7 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
 
         if (type_named.type_name != "void") {
             final_str << " -> ";
-            final_str << convert_type_name_to_string(data, type_named.type_name);
+            final_str << convert_type_name_to_string(data, type_named.type, type_named.type_name);
         }
     } else {
         auto type_not_named = std::get<TypeNotNamed>(return_type);
@@ -316,8 +366,12 @@ static inline auto convert_c_fptr_to_odin_fptr(SaveData* data, CXType type, std:
     return final_str.str();
 }
 
-static inline auto convert_type_name_to_string(SaveData* data, std::string type_name) -> std::string {
+static inline auto convert_type_name_to_string(SaveData* data, CXType type, std::string type_name) -> std::string {
     std::stringstream ss;
+
+    if (FIND_FUNCTION_PTR(type_name)) {
+        return convert_c_fptr_to_odin_fptr(data, type, type_name);
+    }
 
     if (type_name.find("proc(") != std::string::npos) {
         return type_name;
@@ -344,11 +398,12 @@ static inline auto convert_type_name_to_string(SaveData* data, std::string type_
     std::reverse(array_size_strings.begin(), array_size_strings.end());
 
     for (auto array_size_string : array_size_strings) {
+        #if DEBUG_PRINT
         std::cout << type_name << ": " << array_size_string << std::endl;
+        #endif
+
         ss << array_size_string;
     }
-
-    // std::cout << "TYPE BEFORE: " << type_name << std::endl;
 
     {
         auto pointer_level = get_rid_of_pointer(type_name);
@@ -360,7 +415,6 @@ static inline auto convert_type_name_to_string(SaveData* data, std::string type_
             type_name += "_t";
         }
         
-
         if (type_name == "void" && pointer_level >= 1) {
             pointer_level -= 1;
             type_name = "rawptr";
@@ -372,7 +426,6 @@ static inline auto convert_type_name_to_string(SaveData* data, std::string type_
         }
 
         ss << std::string(pointer_level, '^');
-        // std::cout << "TYPE: " << type_name << "|" << std::endl;
 
         ss << convert_to_c_keyword(type_name);
     }
@@ -484,15 +537,30 @@ static inline auto convert_struct_decl_to_string(SaveData* data, StructDecl decl
             ss << "using ";
         }
 
-        ss << field.name << ": ";
+        #if DEBUG_PRINT 
+        std::cout << "STRUCT FIELD NAME IS: " << field.name << std::endl;
+        #endif
+
+        if (unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end()) {
+            field.name += "_v";
+        }
+
 
         switch (field.is_type_named) {
             case true:
-                ss << convert_type_name_to_string(data, field.type_named.type_name);
+                trim_spaces_string(field.type_named.type_name);
+                if (field.type_named.type_name == field.name)
+                    ss << field.name << "_v: ";
+                else 
+                    ss << field.name << ": ";
+                
+                ss << convert_type_name_to_string(data, field.type_named.type, field.type_named.type_name);
 
                 break;
 
             case false:
+                ss << field.name << ": ";
+
                 switch (field.type_not_named.type) {
                     case FieldType::STRUCT:
                         ss << std::string(field.type_not_named.pointer_level, '^');
@@ -549,16 +617,29 @@ static inline auto convert_function_decl_to_string(SaveData* data, FunctionDecl 
 
     ss << std::string(data->recursion_level, '\t') << decl.name << " :: proc(";
     for (auto argument : decl.arguments) {
-        if (argument.name != "")
-            ss << argument.name << ": ";
+        if (unallowed_keywords_in_odin.find(argument.name) != unallowed_keywords_in_odin.end()) {
+            argument.name += "_v";
+        }
 
         if (std::holds_alternative<TypeNamed>(argument.type)) {
             auto type_named = std::get<TypeNamed>(argument.type);
+
+            if (argument.name != "" && argument.name != type_named.type_name)
+                ss << argument.name << ": ";
+            else if (argument.name == type_named.type_name)
+                ss << argument.name << "_v: ";
+            else
+                ss << "_: ";
             
             ss << (type_named.type_name.find("proc") != std::string::npos ? 
                             type_named.type_name :
-                            convert_type_name_to_string(data, type_named.type_name));
+                            convert_type_name_to_string(data, type_named.type, type_named.type_name));
         } else {
+            if (argument.name != "")
+                ss << argument.name << ": ";
+            else
+                ss << "_: ";
+
             auto type_not_named = std::get<TypeNotNamed>(argument.type);
 
             ss << std::string(type_not_named.pointer_level, '^') << 
@@ -582,7 +663,7 @@ static inline auto convert_function_decl_to_string(SaveData* data, FunctionDecl 
 
         if (type_named.type_name != "void") {
             ss << " -> ";
-            ss << convert_type_name_to_string(data, type_named.type_name);
+            ss << convert_type_name_to_string(data, type_named.type, type_named.type_name);
         }
     } else {
         auto type_not_named = std::get<TypeNotNamed>(decl.return_type);
@@ -602,8 +683,6 @@ static inline auto convert_function_decl_to_string(SaveData* data, FunctionDecl 
 }
 
 static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
-    // std::cout << "TYPEDEF TYPE NAME: " << type_def.type_name << std::endl;
-
     GET_RAW_COMMENT(type_def.cursor);
     type_def.comment_text = comments;
 
@@ -615,15 +694,15 @@ static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
 
     // if (type_def.is_proc_type) 
     //     return;
+    
+    #if DEBUG_PRINT
+    if (type_def.type_name.find("(*") != std::string::npos)
+        std::cout << "FUNCTION PTR IS: " << type_def.type_name << std::endl;
+    #endif
 
     if (FIND_FUNCTION_PTR(type_def.type_name)) {
-        // std::cout << "TYPEDEF NAME: " << type_def.name << std::endl;
-        // std::cout << "IS TYPE: " << (int)type_def.is << std::endl;
-
         type_def.is_proc_type = true;
         type_def.type_name = convert_c_fptr_to_odin_fptr(&data, type_def.type, type_def.type_name);
-        // std::cout << "IS TYPE (AFTER): " << (int)type_def.is << std::endl;
-        // std::cout << "TYPENAME (AFTER): " << type_def.type_name << std::endl;
         return;
     }
 
@@ -667,8 +746,6 @@ static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
 
             bool found = false;
 
-            // std::cout << "SUBSTR RESULT: " << type_to_check << " " << type_to_check.size() << std::endl;
-
             for (auto decl : data.enum_decls) {
                 if (type_to_check == decl.name) {
                     type_def.enum_decl = decl;
@@ -693,8 +770,6 @@ static inline void modify_type_def(SaveData& data, TypeDef& type_def) {
             auto type_to_check = type_def.type_name.substr(7, type_def.type_name.size()-6-type_def.pointer_level);
 
             bool found = false;
-
-            // std::cout << "SUBSTR RESULT: " << type_to_check << " " << type_to_check.size() << std::endl;
 
             for (auto decl : data.struct_decls) {
                 if (type_to_check == decl.name) {
@@ -838,15 +913,22 @@ static inline void recurse_struct(SaveData* data, std::string name, CXCursor cur
 
                         field.name = (char*)clang_getCursorSpelling(cursor).data;
 
+                        strip_prefix(field.name, data->remove_prefixes);
                         if (unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end()) {
                             field.name += "_v";
                         }
 
                         field.is_type_named = !FIND_ANONYMOUS(type_name);
 
+                        #define FIELDS ((StructDecl*)(data->current_data))->fields
+
                         if (field.is_type_named) {
                             field.type_named.type = type;
                             field.type_named.type_name = type_name;
+
+                            if (FIND_FUNCTION_PTR(type_name) && FIELDS.size() > 0 && FIELDS[FIELDS.size()-1].name == "_") {
+                                FIELDS.pop_back();
+                            }
                         } else {
                             field.type_not_named.pointer_level = (unsigned int)std::count(type_name.begin(), type_name.end(), '*');
 
@@ -860,11 +942,12 @@ static inline void recurse_struct(SaveData* data, std::string name, CXCursor cur
                                 field.type_not_named.index = data->enum_decls.size()-1;
                             }
 
-                            ((StructDecl*)(data->current_data))->fields.pop_back();
+                            FIELDS.pop_back();
                         }
                         
 
-                        ((StructDecl*)(data->current_data))->fields.push_back(field);                        
+                        FIELDS.push_back(field);                        
+                        #undef FIELDS
                     }
 
                     break;
@@ -940,8 +1023,6 @@ static inline void recurse_struct(SaveData* data, std::string name, CXCursor cur
 
 static inline CXVisitorResult build_queue(CXCursor cursor, CXCursor parent, CXClientData client_data) {
     CXSourceLocation location = clang_getCursorLocation(cursor);
-
-    // std::cout << "LOCATION: " << location.int_data << std::endl;
 
     if(clang_Location_isInSystemHeader(location) != 0)
         return CXVisit_Continue;

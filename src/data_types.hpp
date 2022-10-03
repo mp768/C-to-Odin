@@ -115,6 +115,7 @@ struct SaveData {
     std::vector<TypeDef> type_defs;
     std::vector<std::string> remove_prefixes;
     std::vector<std::string> remove_constant_prefixes;
+    std::vector<std::string> include_paths;
     std::unordered_map<std::string, std::string> type_names;
     void* current_data;
     
@@ -124,6 +125,9 @@ struct SaveData {
     bool convert_char_pointer_to_cstring;
     bool seperate_files;
     std::string package_name;
+    std::string windows_library_path;
+    std::string linux_library_path;
+    std::string mac_library_path;
 
     size_t recursion_level;
 

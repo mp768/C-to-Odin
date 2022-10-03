@@ -1,3 +1,6 @@
+// only enable this if you want to debug print.
+#define DEBUG_PRINT false
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -11,30 +14,41 @@
 #include "functions.hpp"
 #include "print_functions.hpp"
 
-#define DEBUG_PRINT
 
-void save_to_file(SaveData& data, std::string file_name, std::string package_name);
+void save_to_file(SaveData& data, std::string file_name);
 
 bool parse_file(std::string file_path, SaveData& original_data) {
     CXIndex index        = clang_createIndex(0, 1);
-    char* arguments[] = { "-fparse-all-comments" };
-    CXTranslationUnit tu = clang_parseTranslationUnit(index, file_path.c_str(), arguments, 1, nullptr, 0, CXTranslationUnit_Flags::CXTranslationUnit_KeepGoing);
+
+    std::vector<char*> arguments;
+    arguments.push_back("-fparse-all-comments");
+    
+    for (auto path : original_data.include_paths) {
+        arguments.push_back(const_cast<char*>(path.c_str()));
+    }
+    
+    CXTranslationUnit tu = clang_parseTranslationUnit(index, file_path.c_str(), arguments.data(), arguments.size(), nullptr, 0, CXTranslationUnit_Flags::CXTranslationUnit_KeepGoing);
 
     original_data.idxs.push_back(index);
     original_data.tus.push_back(tu);
     
+    #if DEBUG_PRINT
     std::cout << "EVALUATING TRANSLATION UNIT" << std::endl;
     std::cout << "RESULT: " << tu << std::endl;
+    #endif
+
     if(!tu)
         return false;
   
     CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
 
+    #if DEBUG_PRINT
     std::cout << "DATA:" << std::endl;
 
     std::cout << rootCursor.kind << std::endl;
     std::cout << rootCursor.xdata << std::endl;
     std::cout << rootCursor.data << std::endl;
+    #endif
 
     DataQueue queue;
 
@@ -108,11 +122,18 @@ bool parse_file(std::string file_path, SaveData& original_data) {
 
     if (original_data.seperate_files) {
         auto extension = file_path.find_last_of('.');
+        data.package_name         = original_data.package_name;
+        data.windows_library_path = original_data.windows_library_path;
+        data.linux_library_path   = original_data.linux_library_path;
+        data.mac_library_path     = original_data.mac_library_path;
 
         auto new_file_path = file_path.erase(extension);
         new_file_path += ".odin";
 
-        save_to_file(data, new_file_path, original_data.package_name);
+        save_to_file(data, new_file_path);
+
+
+        return true;
     }
     
     if (data.struct_decls.size() != 0) {
@@ -155,29 +176,49 @@ bool parse_file(std::string file_path, SaveData& original_data) {
 }
 
 // TODO: worry about library paths later
-void save_to_file(SaveData& data, std::string file_name, std::string package_name) {
+void save_to_file(SaveData& data, std::string file_name) {
     std::ofstream file(file_name);
 
-    file << "package " << package_name << "\n";
+    file << "package " << data.package_name << "\n";
     file << "import " << __C_TYPE_LITERAL << " \"core:c\"\n\n";
 
+    file << "when ODIN_OS == .Windows {\n";
+    file << "\tforeign import __LIB__ \"" << data.windows_library_path << "\"\n";
+    file << "} else when ODIN_OS == .Linux {\n";
+    file << "\tforeign import __LIB__ \"" << data.linux_library_path << "\"\n";
+    file << "} else when ODIN_OS == .Darwin {\n";
+    file << "\tforeign import __LIB__ \"" << data.mac_library_path << "\"\n}\n\n"; 
+
     for (auto type_def : data.type_defs) {
+        #if DEBUG_PRINT
         std::cout << "TYPEDEF NAMES: " << type_def.name << std::endl;
         std::cout << "IS: " << (int)type_def.is << std::endl;
+        #endif
 
         if (type_def.name != "" && data.type_names.find(type_def.name) == data.type_names.end()) {
             std::vector<std::string> comment_text;
             std::string content;
+            std::string array_lengths;
             switch (type_def.is) {
                 case TypeDef::IS::STRUCT:
                     comment_text = type_def.struct_decl.comment_text;
                     content = convert_struct_decl_to_string(&data, type_def.struct_decl);
+                    for (auto array_size : type_def.array_sizes) {
+                        array_lengths += "[" + std::to_string(array_size) + "]";
+                    }
+
+                    array_lengths += std::string(type_def.pointer_level, '^');
 
                     break;
 
                 case TypeDef::IS::ENUM:
                     comment_text = type_def.enum_decl.comment_text;
                     content = convert_enum_decl_to_string(&data, type_def.enum_decl);
+                    for (auto array_size : type_def.array_sizes) {
+                        array_lengths += "[" + std::to_string(array_size) + "]";
+                    }   
+
+                    array_lengths += std::string(type_def.pointer_level, '^');
 
                     break;
 
@@ -185,7 +226,7 @@ void save_to_file(SaveData& data, std::string file_name, std::string package_nam
                     comment_text = type_def.comment_text;
                     content = "distinct ";
 
-                    content += convert_type_name_to_string(&data, type_def.type_name);
+                    content += convert_type_name_to_string(&data, type_def.type, type_def.type_name);
 
                     break;
             }
@@ -196,13 +237,7 @@ void save_to_file(SaveData& data, std::string file_name, std::string package_nam
                 }
             }
 
-            std::string array_lengths;
-
-            for (auto array_size : type_def.array_sizes) {
-                // array_lengths += "[" + std::to_string(array_size) + "]";
-            }
-
-            file << type_def.name << " :: " << content << "\n\n";
+            file << type_def.name << " :: " << array_lengths << content << "\n\n";
         }
 
         data.type_names.emplace(type_def.name, "");
@@ -252,7 +287,11 @@ void save_to_file(SaveData& data, std::string file_name, std::string package_nam
         auto prefix = std::get<0>(a);
         auto decls = std::get<1>(a);
 
-        file << "@(default_calling_convention = \"c\", link_prefix = \"" << prefix << "\")\n";
+        file << "@(default_calling_convention = \"c\"";
+        if (prefix != "")
+            file << ", link_prefix = \"" << prefix << "\")\n";
+        else 
+            file << ")\n";
         file << "foreign __LIB__ {\n"; 
 
         data.recursion_level += 1; 
@@ -276,25 +315,231 @@ int main(int argc, char** argv) {
     //
     // char* file_path = argv[1];
 
-    std::vector<std::string> arguments;
-    for (int i = 0; i < argc; i++) {
-        arguments.push_back(argv[i]);
-    }
+    // std::vector<std::string> arguments;
+    // for (int i = 0; i < argc; i++) {
+    //     arguments.push_back(argv[i]);
+    // }
 
     // TODO: Add logic to be able to do more customization with how the generation outputs stuff.
 
-    char* file_path[] = { "../../src/test.c", "../../src/test.h" };
+    // char* file_path[] = { "../../src/test.c", "../../src/test.h" };
+    std::vector<std::string> file_paths;
+
+    {
+        std::cout << "What files would you like to convert? (surround with quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        while (first_quote != std::string::npos) {
+            str.erase(0, first_quote+1);
+            auto last_quote = str.find('"');
+
+            if (last_quote == std::string::npos) {
+                std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
+                return -1;
+            }
+
+            std::string path = str.substr(0, last_quote);
+            file_paths.push_back(path);
+            str = str.erase(0, last_quote+1);
+
+            first_quote = str.find('"');
+        }
+    }
+
+    std::vector<std::string> include_paths;
+    {
+        std::cout << "What include paths are there? (surround with quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        while (first_quote != std::string::npos) {
+            str.erase(0, first_quote+1);
+            auto last_quote = str.find('"');
+
+            if (last_quote == std::string::npos) {
+                std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
+                return -1;
+            }
+
+            std::string path = str.substr(0, last_quote);
+            include_paths.push_back("-I" + path);
+            str = str.erase(0, last_quote+1);
+
+            first_quote = str.find('"');
+        }
+    }
+
+    std::vector<std::string> prefixes_to_remove;
+    {
+        std::cout << "What prefixes would you like to remove? (surround with quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        while (first_quote != std::string::npos) {
+            str.erase(0, first_quote+1);
+            auto last_quote = str.find('"');
+
+            if (last_quote == std::string::npos) {
+                std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
+                return -1;
+            }
+
+            std::string prefix = str.substr(0, last_quote);
+            prefixes_to_remove.push_back(prefix);
+            str = str.erase(0, last_quote+1);
+
+            first_quote = str.find('"');
+        }
+    }
+
+    bool convert_to_cstring;
+    {
+        std::cout << "Would you like to convert character pointers to cstring's? (Y or N): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        convert_to_cstring = str.length() == 1 && std::tolower(str[0]) == 'y';
+    }
+
+    bool seperate_files;
+    {
+        std::cout << "Would you like to maintain seperate files? (Y or N): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        seperate_files = str.length() == 1 && std::tolower(str[0]) == 'y';
+    }
+    
+    std::string package_name;
+    {
+        std::cout << "What should the package be named? (enter in plain text and make sure it is a valid identifer): ";
+        std::getline(std::cin, package_name);
+    }
+
+    std::string windows_path;
+    {
+        std::cout << "What will be the windows path to the library? (surround in quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        if (first_quote == std::string::npos) {
+            std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
+            return -1;
+        }
+
+        str = str.erase(0, first_quote+1);
+
+        auto last_quote = str.find('"');
+
+        if (last_quote == std::string::npos) {
+            std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
+            return -1;
+        }
+
+        windows_path = str.substr(0, last_quote);
+    }
+
+    std::string linux_path;
+    {
+        std::cout << "What will be the linux path to the library? (surround in quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        if (first_quote == std::string::npos) {
+            std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
+            return -1;
+        }
+
+        str = str.erase(0, first_quote+1);
+
+        auto last_quote = str.find('"');
+
+        if (last_quote == std::string::npos) {
+            std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
+            return -1;
+        }
+
+        linux_path = str.substr(0, last_quote);
+    }
+
+    std::string mac_path;
+    {
+        std::cout << "What will be the mac path to the library? (surround in quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        if (first_quote == std::string::npos) {
+            std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
+            return -1;
+        }
+
+        str = str.erase(0, first_quote+1);
+
+        auto last_quote = str.find('"');
+
+        if (last_quote == std::string::npos) {
+            std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
+            return -1;
+        }
+
+        mac_path = str.substr(0, last_quote);
+    }
+
+    std::string output_path;
+    if (!seperate_files) {
+        std::cout << "Where would you like to output the file? (surround in quotes): ";
+        std::string str;
+        std::getline(std::cin, str);
+
+        auto first_quote = str.find('"');
+
+        if (first_quote == std::string::npos) {
+            std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
+            return -1;
+        }
+
+        str = str.erase(0, first_quote+1);
+
+        auto last_quote = str.find('"');
+
+        if (last_quote == std::string::npos) {
+            std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
+            return -1;
+        }
+
+        output_path = str.substr(0, last_quote);
+    }
 
     SaveData data;
-    data.remove_prefixes = { "test_", "something_" };
-    data.convert_char_pointer_to_cstring = false;
-    data.seperate_files = false;
-    data.package_name = "tester";
+    data.remove_prefixes = prefixes_to_remove;
+    data.convert_char_pointer_to_cstring = convert_to_cstring;
+    data.seperate_files = seperate_files;
+    data.package_name = package_name;
+    data.windows_library_path = windows_path;
+    data.linux_library_path = linux_path;
+    data.mac_library_path = mac_path;
+    data.include_paths = include_paths;
 
-    parse_file(file_path[0], data);
-    parse_file(file_path[1], data);
+    for (auto file_path : file_paths) {
+        std::cout << "PARSING FILE \"" << file_path << "\"" << std::endl;
+        parse_file(file_path, data);
+    }
 
-    save_to_file(data, "../../test.odin", data.package_name);
+    if (!data.seperate_files)
+        save_to_file(data, output_path);
 
     return 0;
 }

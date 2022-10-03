@@ -25,11 +25,12 @@ typedef struct Hello {
         int e;
     }* f;
 
-} Hello;
+}** Hello[2][1];
 
 typedef struct {
     const char* const str;
     Hello hi;
+    enum SOME_ENUM (*SOME_ENUM_PROC)();
 }* HI;
 
 typedef enum {
@@ -41,7 +42,7 @@ typedef Hello* test_HelloPtr;
 
 typedef int32_t test_i32[1][3][4];
 
-typedef int*(*INT_PROC)(const int*[3], struct Hello[2], test_HelloPtr);
+typedef int*(*INT_PROC[2])(const int*[3], struct Hello[2], test_HelloPtr);
 
 // THIS IS SOME_PROC, THIS FUNCTION DOES SOMETHING
 // I REALLY DON'T KNOW WHAT IT DOES, BUT IT DOES
