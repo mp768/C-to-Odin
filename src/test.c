@@ -94,6 +94,8 @@ STUPID_STRUCT* test_func4(STUPID_STRUCT*** ptr);
 // what the func5
 EVEN_STUPIDER_STRUCT* test_func5(STUPID_STRUCT* ptr[2], int a, float b, double h);
 
+#define SOME_MACRO 4
+
 // TYPEDEF A IS A BUNCH OF A
 typedef struct A {
     struct {

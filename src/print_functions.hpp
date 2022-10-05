@@ -1,11 +1,12 @@
 #pragma once
 #include "keywords.hpp"
 #include "data_types.hpp"
+#include "essential_macros.hpp"
 
-static inline auto print_struct(SaveData* save_data, StructDecl decl) -> void {
+function print_struct(SaveData ptr save_data, StructDecl decl) -> void {
     std::cout << std::string(save_data->recursion_level, '\t') << "Struct \"" << decl.name << "\":" << std::endl;
 
-    for (auto field : decl.fields) {
+    for (let field in decl.fields) {
         if (field.is_type_named) {
             std::cout << std::string(save_data->recursion_level+1, '\t') << field.type_named.type_name << " " << field.name << std::endl;
         } else {
@@ -30,7 +31,7 @@ static inline auto print_struct(SaveData* save_data, StructDecl decl) -> void {
     }
 }
 
-static inline auto print_type_def(SaveData* data, TypeDef type_def) -> void {
+function print_type_def(SaveData ptr data, TypeDef type_def) -> void {
     std::cout << std::string(data->recursion_level, '\t') << "TYPEDEF \"" << type_def.name << "\": ";
 
     switch (type_def.is) {

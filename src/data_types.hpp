@@ -97,9 +97,11 @@ struct DataEntry {
         UNION,
         TYPEDEF,
         FUNCTION,
+        CONSTANT,
         NONE,
     } is;
 
+    std::string constant_string;
     CXCursor cursor;
     std::string name;
 };
@@ -113,6 +115,7 @@ struct SaveData {
     std::vector<EnumDecl> enum_decls;
     std::vector<FunctionDecl> function_decls;
     std::vector<TypeDef> type_defs;
+    std::vector<std::tuple<std::string, std::string>> macro_constants;
     std::vector<std::string> remove_prefixes;
     std::vector<std::string> remove_constant_prefixes;
     std::vector<std::string> include_paths;

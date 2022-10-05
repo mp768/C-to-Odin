@@ -27,7 +27,15 @@ bool parse_file(std::string file_path, SaveData& original_data) {
         arguments.push_back(const_cast<char*>(path.c_str()));
     }
     
-    CXTranslationUnit tu = clang_parseTranslationUnit(index, file_path.c_str(), arguments.data(), arguments.size(), nullptr, 0, CXTranslationUnit_Flags::CXTranslationUnit_KeepGoing);
+    CXTranslationUnit tu = clang_parseTranslationUnit(
+        index, 
+        file_path.c_str(), 
+        arguments.data(), 
+        arguments.size(), 
+        nullptr, 
+        0, 
+        CXTranslationUnit_Flags::CXTranslationUnit_DetailedPreprocessingRecord
+    );
 
     original_data.idxs.push_back(index);
     original_data.tus.push_back(tu);
@@ -77,6 +85,14 @@ bool parse_file(std::string file_path, SaveData& original_data) {
 
             case DataEntry::IS::STRUCT:
                 recurse_struct(&data, entry.name, entry.cursor, false, true);
+                break;
+            
+            case DataEntry::IS::CONSTANT:
+                #if DEBUG_PRINT
+                std::cout << "MACRO CONSTANT GOTTEN: " << entry.name << std::endl;
+                #endif
+
+                data.macro_constants.push_back({ entry.name, entry.constant_string });
                 break;
 
             case DataEntry::IS::TYPEDEF:
@@ -164,6 +180,13 @@ bool parse_file(std::string file_path, SaveData& original_data) {
         original_data.type_defs.insert(oend, start, end);
     }
 
+    if (data.macro_constants.size() != 0) {
+        auto end = data.macro_constants.end();
+        auto start = data.macro_constants.begin();
+        auto oend = original_data.macro_constants.end();
+        original_data.macro_constants.insert(oend, start, end);
+    }
+
     // for (auto decl : data.struct_decls) {
     //     print_struct(&data, decl);
     // }
@@ -188,6 +211,10 @@ void save_to_file(SaveData& data, std::string file_name) {
     file << "\tforeign import __LIB__ \"" << data.linux_library_path << "\"\n";
     file << "} else when ODIN_OS == .Darwin {\n";
     file << "\tforeign import __LIB__ \"" << data.mac_library_path << "\"\n}\n\n"; 
+
+    for (auto constant : data.macro_constants) {
+        file << std::get<0>(constant) << " :: " << std::get<1>(constant) << "\n\n";
+    }
 
     for (auto type_def : data.type_defs) {
         #if DEBUG_PRINT
@@ -309,7 +336,9 @@ void save_to_file(SaveData& data, std::string file_name) {
     file.close();
 }
 
-int main(int argc, char** argv) {
+function main(int argc, char** argv) -> int {
+    let a = 2;
+
     // if(argc < 2)
     //     return -1;
     //
@@ -330,18 +359,18 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        var first_quote = str.find('"');
 
         while (first_quote != std::string::npos) {
             str.erase(0, first_quote+1);
-            auto last_quote = str.find('"');
+            let last_quote = str.find('"');
 
             if (last_quote == std::string::npos) {
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
             }
 
-            std::string path = str.substr(0, last_quote);
+            let path = str.substr(0, last_quote);
             file_paths.push_back(path);
             str = str.erase(0, last_quote+1);
 
@@ -355,18 +384,18 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        var first_quote = str.find('"');
 
         while (first_quote != std::string::npos) {
             str.erase(0, first_quote+1);
-            auto last_quote = str.find('"');
+            let last_quote = str.find('"');
 
             if (last_quote == std::string::npos) {
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
             }
 
-            std::string path = str.substr(0, last_quote);
+            let path = str.substr(0, last_quote);
             include_paths.push_back("-I" + path);
             str = str.erase(0, last_quote+1);
 
@@ -380,18 +409,18 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        var first_quote = str.find('"');
 
         while (first_quote != std::string::npos) {
             str.erase(0, first_quote+1);
-            auto last_quote = str.find('"');
+            let last_quote = str.find('"');
 
             if (last_quote == std::string::npos) {
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
             }
 
-            std::string prefix = str.substr(0, last_quote);
+            let prefix = str.substr(0, last_quote);
             prefixes_to_remove.push_back(prefix);
             str = str.erase(0, last_quote+1);
 
@@ -429,7 +458,7 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        let first_quote = str.find('"');
 
         if (first_quote == std::string::npos) {
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
@@ -438,7 +467,7 @@ int main(int argc, char** argv) {
 
         str = str.erase(0, first_quote+1);
 
-        auto last_quote = str.find('"');
+        let last_quote = str.find('"');
 
         if (last_quote == std::string::npos) {
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
@@ -454,7 +483,7 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        let first_quote = str.find('"');
 
         if (first_quote == std::string::npos) {
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
@@ -463,7 +492,7 @@ int main(int argc, char** argv) {
 
         str = str.erase(0, first_quote+1);
 
-        auto last_quote = str.find('"');
+        let last_quote = str.find('"');
 
         if (last_quote == std::string::npos) {
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
@@ -479,7 +508,7 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        let first_quote = str.find('"');
 
         if (first_quote == std::string::npos) {
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
@@ -488,7 +517,7 @@ int main(int argc, char** argv) {
 
         str = str.erase(0, first_quote+1);
 
-        auto last_quote = str.find('"');
+        let last_quote = str.find('"');
 
         if (last_quote == std::string::npos) {
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
@@ -504,7 +533,7 @@ int main(int argc, char** argv) {
         std::string str;
         std::getline(std::cin, str);
 
-        auto first_quote = str.find('"');
+        let first_quote = str.find('"');
 
         if (first_quote == std::string::npos) {
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
@@ -513,7 +542,7 @@ int main(int argc, char** argv) {
 
         str = str.erase(0, first_quote+1);
 
-        auto last_quote = str.find('"');
+        let last_quote = str.find('"');
 
         if (last_quote == std::string::npos) {
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
@@ -533,7 +562,11 @@ int main(int argc, char** argv) {
     data.mac_library_path = mac_path;
     data.include_paths = include_paths;
 
-    for (auto file_path : file_paths) {
+    If a > 3 Then 
+    
+    End
+
+    for (let file_path in file_paths) {
         std::cout << "PARSING FILE \"" << file_path << "\"" << std::endl;
         parse_file(file_path, data);
     }
