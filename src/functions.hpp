@@ -4,54 +4,55 @@
 #include "data_types.hpp"
 #include "essential_macros.hpp"
 
-#define cast(type, expr) ((type)(expr))
 #define FIND_FUNCTION_PTR(variable) (variable.find("(*") != std::string::npos && (variable.find("*)") != std::string::npos || variable.find("])") != std::string::npos))
 #define FIND_ANONYMOUS(variable) (variable.find("anonymous ") != std::string::npos || variable.find("unnamed ") != std::string::npos)
 #define GET_RAW_COMMENT(cursor) std::vector<std::string> comments; { var range = clang_Cursor_getCommentRange(cursor); if (range.begin_int_data != 0 && range.end_int_data != 0) { std::string comment = cast(char ptr, clang_Cursor_getRawCommentText(cursor).data); comments = strip_unnecessary_newline(comment); }  }
 #define FIND_ARRAY_BRACES(variable) (variable.find("[") != std::string::npos && variable.find("]") != std::string::npos)
 
-function strip_unnecessary_newline(std::string ref str) -> std::vector<std::string> {
+function strip_unnecessary_newline(std::string ref str) -> std::vector<std::string>
+Begin
     var r_index = str.find('\r');
 
-    while (r_index != std::string::npos) {
+    While r_index != std::string::npos Then
         str.erase(r_index, 1);
 
         r_index = str.find('\r');
-    }
+    End
 
     var newline_index = str.find('\n');
 
-    while (newline_index != std::string::npos) {
-        if (newline_index == str.size()-1 || newline_index == 0)
+    While newline_index != std::string::npos Then
+        If newline_index == str.size()-1 || newline_index == 0 Then
             str = str.erase(newline_index, 1);
-        else if (str[newline_index+1] != '\n') {
+        Elif str[newline_index+1] != '\n' Then
             str[newline_index] = '\b';
             // str = str.erase(newline_index+1, 1);
-        }
+        End
         
         newline_index = str.find('\n');
-    }
+    End
 
     var b_index = str.find('\b');
 
-    while (b_index != std::string::npos) {
+    While b_index != std::string::npos Then
         str[b_index] = '\n';
 
         b_index = str.find('\b');
-    }
+    End
 
     std::stringstream ss(str);
     std::string STR;
     std::vector<std::string> results;
 
-    while(std::getline(ss, STR, '\n')) {
+    While std::getline(ss, STR, '\n') Then
         results.push_back(STR);
-    }
+    End
 
     return results;
-}
+End
 
-function get_rid_of_const(std::string ref type_name) -> void {
+function get_rid_of_const(std::string ref type_name) -> void 
+Begin
     var const_index = type_name.find("const ");
 
     #if DEBUG_PRINT
@@ -60,7 +61,7 @@ function get_rid_of_const(std::string ref type_name) -> void {
 
     var decrease = false;
 
-    while (const_index != std::string::npos) {
+    While const_index != std::string::npos Then
         type_name = type_name.erase(const_index, (decrease ? 5 : 6));
         const_index = type_name.find("const");
 
@@ -69,125 +70,133 @@ function get_rid_of_const(std::string ref type_name) -> void {
         #endif 
 
         decrease = true;
-    }
-}
+    End
+End
 
 function trim_spaces_string(std::string ref type_name) -> void;
 
-function get_rid_of_pointer(std::string ref type_name) -> int {
+function get_rid_of_pointer(std::string ref type_name) -> int
+Begin
     var pointer_index = type_name.find("*");
 
     var pointer_level = 0;
 
     var found_pointer = false;
 
-    while (pointer_index != std::string::npos) {
+    While pointer_index != std::string::npos Then
         type_name = type_name.erase(pointer_index, 1);
         pointer_index = type_name.find("*");
         found_pointer = true;
 
         pointer_level++;
-    }
+    End
 
-    if (found_pointer) {
+    If found_pointer Then
         trim_spaces_string(type_name);
-    }
+    End
 
     #if DEBUG_PRINT 
     std::cout << "TRIMMED POINTER FOR: " << type_name << std::endl;
     #endif
 
     return pointer_level;
-}
+End
 
-function trim_spaces_string(std::string ref type_name) -> void {
+function trim_spaces_string(std::string ref type_name) -> void 
+Begin
     var space_index = type_name.find(' ');
 
-    while (space_index != std::string::npos) {
-        if (space_index == type_name.size()-1 || space_index == 0)
+    While space_index != std::string::npos Then
+        If space_index == type_name.size()-1 || space_index == 0 Then
             type_name = type_name.erase(space_index, 1);
-        else if (type_name[space_index+1] != ' ')
+        Elif type_name[space_index+1] != ' ' Then
             type_name[space_index] = '\b';
-        else 
+        Else
             type_name[space_index] = '\b';
+        End
         
         space_index = type_name.find(' ');
 
         #if DEBUG_PRINT
         std::cout << "CURRENT TRIMMING OF SPACES: " << type_name << std::endl;
         #endif
-    }
+    End
 
     var b_index = type_name.find('\b');
 
-    while (b_index != std::string::npos) {
+    While b_index != std::string::npos Then
         type_name[b_index] = ' ';
 
         b_index = type_name.find('\b');
-    }
-}
+    End
+End
 
-function convert_to_c_keyword(std::string type_name) -> std::string {
-    if (c_keyword_to_odin.find(type_name) != c_keyword_to_odin.end()) {
+function convert_to_c_keyword(std::string type_name) -> std::string 
+Begin
+    If c_keyword_to_odin.find(type_name) != c_keyword_to_odin.end() Then
         return c_keyword_to_odin[type_name];
-    }
+    End
 
     return type_name;
-}
+End
 
-function strip_enum_and_struct(std::string ref str) -> void {
-    var enum_idx = str.find("enum ");
-    var struct_idx = str.find("struct ");
-    var union_idx = str.find("union ");
+function strip_enum_and_struct(std::string ref str) -> void 
+Begin
+    let enum_idx = str.find("enum ");
+    let struct_idx = str.find("struct ");
+    let union_idx = str.find("union ");
 
-    if (enum_idx != std::string::npos)
+    If enum_idx != std::string::npos Then
         str = str.erase(enum_idx, 4);
-    else if (struct_idx != std::string::npos)
+    Elif struct_idx != std::string::npos Then
         str = str.erase(struct_idx, 6);
-    else if (union_idx != std::string::npos)
+    Elif union_idx != std::string::npos Then
         str = str.erase(union_idx, 5);
-}
+    End
+End
 
-function strip_prefix(std::string ref str, std::vector<std::string> remove_prefixes) -> std::string {
+function strip_prefix(std::string ref str, std::vector<std::string> remove_prefixes) -> std::string 
+Begin
     std::string prefix_stripped = "";
 
     size_t prefix_index = 0;
 
     var i = 0;
-    while (prefix_index != std::string::npos) {
+    While prefix_index != std::string::npos Then
         prefix_index = std::string::npos;
 
-        for (let prefix in remove_prefixes) {
+        For let prefix in remove_prefixes Then
             prefix_index = str.find(prefix);
 
-            if (prefix_index != std::string::npos && prefix_index == 0) {
+            If prefix_index != std::string::npos && prefix_index == 0 Then
                 str = str.erase(prefix_index, prefix.length());
                 prefix_stripped += prefix;
-            }
-        }
+            End
+        End
 
         i++;
 
-        if (i > 1000) {
+        If i > 1000 Then
             // just give up after a while.
             break;
-        }
-    }
+        End
+    End
 
     return prefix_stripped;
-}
+End
 
 function convert_c_fptr_to_odin_fptr(SaveData ptr data, CXType type, std::string fptr) -> std::string;
 function recurse_enum(SaveData ptr data, std::string name, CXCursor cursor, bool declaring = false) -> void;
 function recurse_struct(SaveData ptr data, std::string name, CXCursor cursor, bool is_union, bool declaring = false) -> void;
 
 // this shouldn't be `to_string` but I don't want to chnage it right now because I'm lazy.
-function convert_type_to_string(SaveData ptr data, CXType type) -> std::variant<TypeNamed, TypeNotNamed> {
+function convert_type_to_string(SaveData ptr data, CXType type) -> std::variant<TypeNamed, TypeNotNamed> 
+Begin
     var type_name = std::string((char ptr)clang_getTypeSpelling(type).data);
 
     std::vector<int> array_sizes;
 
-    if (FIND_FUNCTION_PTR(type_name)) {
+    If FIND_FUNCTION_PTR(type_name) Then
         type_name = convert_c_fptr_to_odin_fptr(data, type, type_name);
 
         return TypeNamed {
@@ -195,48 +204,48 @@ function convert_type_to_string(SaveData ptr data, CXType type) -> std::variant<
             type,
             array_sizes,
         };
-    }
+    
+    End
 
-
-    if (FIND_ARRAY_BRACES(type_name)) {
+    If FIND_ARRAY_BRACES(type_name) Then
         var array_size = clang_getArraySize(type);
 
-        while (array_size != -1) {
+        While array_size != -1 Then
             array_sizes.push_back(cast(int, array_size));
             type = clang_getArrayElementType(type);
             array_size = clang_getArraySize(type);
-        }
+        End
 
         std::reverse(array_sizes.begin(), array_sizes.end());
-    }
+    End
 
-    var is_enum = type_name.find("enum ") != std::string::npos;
-    var is_union = type_name.find("union ") != std::string::npos;
+    let is_enum = type_name.find("enum ") != std::string::npos;
+    let is_union = type_name.find("union ") != std::string::npos;
 
-    var is_named = !FIND_ANONYMOUS(type_name);
+    let is_named = !FIND_ANONYMOUS(type_name);
 
-    if (is_named) {
+    If is_named Then
         strip_enum_and_struct(type_name);
         return TypeNamed {
             type_name,
             type,
             array_sizes,
         };
-    }
+    End
 
     var pointer_level = get_rid_of_pointer(type_name);
 
-    for (var i = 0; i < pointer_level; i++) {
+    For var i = 0; i < pointer_level; i++ Then
         type = clang_getPointeeType(type);
-    }
+    End
 
-    var if_struct_or_enum = clang_getTypeDeclaration(type);
+    let if_struct_or_enum = clang_getTypeDeclaration(type);
 
-    if (is_enum) {
+    If is_enum Then
         recurse_enum(data, "", if_struct_or_enum);
-    } else {
+    Else
         recurse_struct(data, "", if_struct_or_enum, is_union);
-    }
+    End
 
     return TypeNotNamed {
         (is_enum ? data->enum_decls.size()-1 : data->struct_decls.size()-1),
@@ -244,36 +253,37 @@ function convert_type_to_string(SaveData ptr data, CXType type) -> std::variant<
         pointer_level,
         array_sizes,
     };
-}
+End
 
 function convert_enum_decl_to_string(SaveData ptr data, EnumDecl decl, bool add_new_line_to_each_field = true) -> std::string;
 function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool add_new_line_to_each_field = true) -> std::string;
 function convert_type_name_to_string(SaveData ptr data, CXType type, std::string type_name) -> std::string;
 
-function convert_c_fptr_to_odin_fptr(SaveData ptr data, CXType type, std::string fptr) -> std::string {
-    if (!FIND_FUNCTION_PTR(fptr)) {
+function convert_c_fptr_to_odin_fptr(SaveData ptr data, CXType type, std::string fptr) -> std::string 
+Begin
+    If !FIND_FUNCTION_PTR(fptr) Then
         return fptr;
-    }
+    End
 
     std::stringstream final_str;
 
     // to handle the potential possibility that a lunatic would create a typedef of a function pointer, and want more than 1.
-    {
+    Begin
         var array_size = clang_getArraySize(type);
 
-        while (array_size != -1) {
+        While array_size != -1 Then
             final_str << "[" << array_size << "]";
 
             type = clang_getArrayElementType(type);
             array_size = clang_getArraySize(type);
-        }
+        End
 
         fptr = (char ptr)clang_getTypeSpelling(type).data;
-    }
+    End
 
-    {
-        var starting_position = fptr.find("(*");
-        var ending_position = fptr.find("*)");
+    Begin
+        let starting_position = fptr.find("(*");
+        let ending_position = fptr.find("*)");
 
         var pointers = fptr.substr(starting_position, ending_position-starting_position+1);
 
@@ -289,12 +299,12 @@ function convert_c_fptr_to_odin_fptr(SaveData ptr data, CXType type, std::string
 
         // CXType type = clang_getCursorType(cursor);
 
-        for (var i = 0; i < pointer_level; i++) {
+        For var i = 0; i < pointer_level; i++ Then
             type = clang_getPointeeType(type);
-        }        
+        End        
 
         // cursor = clang_getTypeDeclaration(type);
-    }
+    End
 
     #if DEBUG_PRINT
     std::cout << "TYPE SPELLING: " << (char ptr)clang_getTypeSpelling(type).data << std::endl;
@@ -302,83 +312,84 @@ function convert_c_fptr_to_odin_fptr(SaveData ptr data, CXType type, std::string
 
     final_str << "proc \"c\" (";
 
-    var argument_amount = clang_getNumArgTypes(type);
+    let argument_amount = clang_getNumArgTypes(type);
 
-    for (var i = 0; i < argument_amount; i++) {
-        var argument_type = clang_getArgType(type, (unsigned int)i);
+    For var i = 0; i < argument_amount; i++ Then
+        let argument_type = clang_getArgType(type, (unsigned int)i);
 
-        var _type = convert_type_to_string(data, argument_type);
+        let _type = convert_type_to_string(data, argument_type);
 
-        if (std::holds_alternative<TypeNamed>(_type)) {
+        If std::holds_alternative<TypeNamed>(_type) Then
             var type = std::get<TypeNamed>(_type);
             final_str << convert_type_name_to_string(data, type.type, type.type_name);
-        } else {
+        Else
             var type = std::get<TypeNotNamed>(_type);
 
             final_str << std::string(type.pointer_level, '^'); 
 
-            for (let array_size in type.array_sizes) {
+            For let array_size in type.array_sizes Then
                 final_str << "[" << array_size << "]";
-            }
+            End
 
-            if (type.type == FieldType::ENUM) {
+            If type.type == FieldType::ENUM Then
                 final_str << convert_enum_decl_to_string(data, data->enum_decls[type.index], false);
-            } else {
+            Else
                 final_str << convert_struct_decl_to_string(data, data->struct_decls[type.index], false);
-            }
-            
-        }
+            End
+        End
 
         final_str << ", ";
-    }
+    End
 
-    if (argument_amount > 0)
+    If argument_amount > 0 Then
         final_str.seekp(-2, final_str.cur);
+    End
 
     final_str << ')';
 
-    var return_type_type = clang_getResultType(type);
+    let return_type_type = clang_getResultType(type);
 
     #if DEBUG_PRINT
     std::cout << return_type_type.kind << std::endl;
     #endif
 
-    var return_type = convert_type_to_string(data, return_type_type);
+    let return_type = convert_type_to_string(data, return_type_type);
 
-    if (std::holds_alternative<TypeNamed>(return_type)) {
+    If std::holds_alternative<TypeNamed>(return_type) Then
         var type_named = std::get<TypeNamed>(return_type);
 
         trim_spaces_string(type_named.type_name);
 
-        if (type_named.type_name != "void") {
+        If type_named.type_name != "void" Then
             final_str << " -> ";
             final_str << convert_type_name_to_string(data, type_named.type, type_named.type_name);
-        }
-    } else {
-        var type_not_named = std::get<TypeNotNamed>(return_type);
+        End
+    Else
+        let type_not_named = std::get<TypeNotNamed>(return_type);
 
         final_str << " -> " << std::string(type_not_named.pointer_level, '^');
 
-        if (type_not_named.type == FieldType::ENUM) {
+        If type_not_named.type == FieldType::ENUM Then
             final_str << convert_enum_decl_to_string(data, data->enum_decls[type_not_named.index], false);
-        } else {
+        Else
             final_str << convert_struct_decl_to_string(data, data->struct_decls[type_not_named.index], false);
-        }
-    }
+        End
+    End
 
     return final_str.str();
-}
+End
 
-function convert_type_name_to_string(SaveData ptr data, CXType type, std::string type_name) -> std::string {
+function convert_type_name_to_string(SaveData ptr data, CXType type, std::string type_name) -> std::string 
+Begin
     std::stringstream ss;
 
-    if (FIND_FUNCTION_PTR(type_name)) {
+    If FIND_FUNCTION_PTR(type_name) Then
         return convert_c_fptr_to_odin_fptr(data, type, type_name);
-    }
+    End
 
-    if (type_name.find("proc(") != std::string::npos) {
+    If type_name.find("proc(") != std::string::npos Then 
         return type_name;
-    }
+    End 
 
     strip_enum_and_struct(type_name);
     
@@ -386,122 +397,128 @@ function convert_type_name_to_string(SaveData ptr data, CXType type, std::string
 
     std::vector<std::string> array_size_strings;
 
-    while (FIND_ARRAY_BRACES(type_name)) {
-        var starting_index = type_name.find("[");
-        var ending_index = type_name.find("]");
+    While FIND_ARRAY_BRACES(type_name) Then
+        let starting_index = type_name.find("[");
+        let ending_index = type_name.find("]");
 
-        var number = type_name.substr(starting_index+1, ending_index-starting_index);
+        let number = type_name.substr(starting_index+1, ending_index-starting_index);
 
         std::string array_size_string = "[" + number;
         array_size_strings.push_back(array_size_string);
 
         type_name = type_name.erase(starting_index, ending_index-starting_index+1);
-    }
+    End
 
     std::reverse(array_size_strings.begin(), array_size_strings.end());
 
-    for (let array_size_string in array_size_strings) {
+    For let array_size_string in array_size_strings Then
         #if DEBUG_PRINT
         std::cout << type_name << ": " << array_size_string << std::endl;
         #endif
 
         ss << array_size_string;
-    }
+    End
 
-    {
+    Begin
         var pointer_level = get_rid_of_pointer(type_name);
 
         strip_prefix(type_name, data->remove_prefixes);
         trim_spaces_string(type_name);
 
-        if (unallowed_keywords_in_odin.find(type_name) != unallowed_keywords_in_odin.end()) {
+        If unallowed_keywords_in_odin.find(type_name) != unallowed_keywords_in_odin.end() Then
             type_name += "_t";
-        }
+        End
         
-        if (type_name == "void" && pointer_level >= 1) {
+        If type_name == "void" && pointer_level >= 1 Then
             pointer_level -= 1;
             type_name = "rawptr";
-        }
+        End
 
-        if (type_name == "char" && data->convert_char_pointer_to_cstring && pointer_level >= 1) {
+        If type_name == "char" && data->convert_char_pointer_to_cstring && pointer_level >= 1 Then
             pointer_level -= 1;
             type_name = "cstring";
-        }
+        End
 
         ss << std::string(pointer_level, '^');
 
         ss << convert_to_c_keyword(type_name);
-    }
+    End
 
     return ss.str();
-}
+End
 
-function convert_enum_decl_to_string(SaveData ptr data, EnumDecl decl, bool add_new_line_to_each_field) -> std::string {
+function convert_enum_decl_to_string(SaveData ptr data, EnumDecl decl, bool add_new_line_to_each_field) -> std::string 
+Begin
     std::stringstream ss;
 
     ss << "enum {";
 
-    if (decl.constants.size() == 0) {
+    If decl.constants.size() == 0 Then
         ss << '}';
         return ss.str();
-    }
+    End
 
     // if (decl.comment_text != "" && add_new_line_to_each_field) 
     //     ss << decl.comment_text;
     // else if (decl.comment_text != "")
     //     ss << "/* " << decl.comment_text << " */";
 
-    if (add_new_line_to_each_field)
+    If add_new_line_to_each_field Then
         ss << '\n'; 
-
-    for (let constant in decl.constants) {
+    End
+    
+    For let constant in decl.constants Then
         var name = std::get<0>(constant);
-        var is_negative = std::get<1>(constant);
-        var value = std::get<2>(constant);
-        var comment_text_ = std::get<3>(constant);
+        let is_negative = std::get<1>(constant);
+        let value = std::get<2>(constant);
+        let comment_text_ = std::get<3>(constant);
 
         strip_prefix(name, data->remove_constant_prefixes);
 
-        if (add_new_line_to_each_field)
+        If add_new_line_to_each_field Then
             ss << std::string(data->recursion_level+1, '\t');
-        else 
+        Else
             ss << " ";
+        End
 
-        for (let comment_text in comment_text_) {
-            if (comment_text != "") {
-                if (add_new_line_to_each_field) {
+        For let comment_text in comment_text_ Then
+            If comment_text != "" Then
+                If add_new_line_to_each_field Then
                     ss << comment_text << '\n';
                     ss << std::string(data->recursion_level+1, '\t');
-                } else {
+                Else
                     ss << "/* " << comment_text << " */ ";
-                }
-            }
-        }
+                End
+            End
+        End
 
         ss << name << " = " << std::string(is_negative, '-') << value << ','; 
         
-        if (add_new_line_to_each_field)
+        If add_new_line_to_each_field Then
             ss << "\n";
-        else 
+        Else
             ss << " ";
-    }
+        End
+    End
 
-    if (add_new_line_to_each_field)
+    If add_new_line_to_each_field Then
         ss << std::string(data->recursion_level, '\t');
+    End
 
     ss << '}';
 
     return ss.str();
-}
+End 
 
-function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool add_new_line_to_each_field) -> std::string {
+function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool add_new_line_to_each_field) -> std::string 
+Begin
     std::stringstream ss;
 
     ss << "struct ";
 
-    if (decl.is_union) {
+    If decl.is_union Then
         ss << "#raw_union ";
-    }
+    End
 
     ss << '{';
 
@@ -510,62 +527,62 @@ function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool 
     // else if (decl.comment_text != "") 
     //     ss << "/* " << decl.comment_text << " */";
 
-    if (decl.fields.size() == 0) {
+    If decl.fields.size() == 0 Then
         ss << '}';
         return ss.str();
-    }
+    End
 
-    if (add_new_line_to_each_field)
+    If add_new_line_to_each_field Then
         ss << '\n'; 
+    End
 
-    for (var field in decl.fields) {
-        if (add_new_line_to_each_field)
+    For var field in decl.fields Then
+        If add_new_line_to_each_field Then
             ss << std::string(data->recursion_level+1, '\t');
-        else 
+        Else 
             ss << " ";
+        End
         
-        for (let comment_text in field.comment_text) {
-            if (comment_text != "") {
-                if (add_new_line_to_each_field) {
+        For let comment_text in field.comment_text Then
+            If comment_text != "" Then
+                If add_new_line_to_each_field Then
                     ss << comment_text << '\n';
                     ss << std::string(data->recursion_level+1, '\t');
-                }
-                else {
+                Else
                     ss << "/* " << comment_text << " */ ";
-                }
-            }
-        }
+                End
+            End
+        End
 
-        if (field.name == "_" && !field.is_type_named) {
+        If field.name == "_" && !field.is_type_named Then
             ss << "using ";
-        }
+        End
 
         #if DEBUG_PRINT 
         std::cout << "STRUCT FIELD NAME IS: " << field.name << std::endl;
         #endif
 
-        if (unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end()) {
+        If unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end() Then
             field.name += "_v";
-        }
+        End
 
-
-        switch (field.is_type_named) {
-            case true:
+        Switch field.is_type_named Then
+            Case(true)
                 trim_spaces_string(field.type_named.type_name);
-                if (field.type_named.type_name == field.name)
+                If field.type_named.type_name == field.name Then
                     ss << field.name << "_v: ";
-                else 
+                Else
                     ss << field.name << ": ";
+                End
                 
                 ss << convert_type_name_to_string(data, field.type_named.type, field.type_named.type_name);
+            EndCase
 
-                break;
-
-            case false:
+            Case(false)
                 ss << field.name << ": ";
 
-                switch (field.type_not_named.type) {
-                    case FieldType::STRUCT:
+                Switch field.type_not_named.type Then
+                    Case(FieldType::STRUCT)
                         ss << std::string(field.type_not_named.pointer_level, '^');
 
                         data->recursion_level += 1;        
@@ -573,10 +590,9 @@ function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool 
                         ss << convert_struct_decl_to_string(data, data->struct_decls[field.type_not_named.index]); 
 
                         data->recursion_level -= 1;
+                    EndCase
 
-                        break;
-
-                    case FieldType::ENUM:
+                    Case(FieldType::ENUM)
                         ss << std::string(field.type_not_named.pointer_level, '^');
 
                         data->recursion_level += 1;
@@ -584,234 +600,241 @@ function convert_struct_decl_to_string(SaveData ptr data, StructDecl decl, bool 
                         ss << convert_enum_decl_to_string(data, data->enum_decls[field.type_not_named.index]);
 
                         data->recursion_level -= 1;
-
-                        break;
-                } 
-
-                break;
-        }
+                    EndCase
+                End
+            EndCase
+        End
 
         ss << ",";
 
-        if (add_new_line_to_each_field)
+        If add_new_line_to_each_field Then
             ss << "\n";
-        else 
+        Else 
             ss << " ";
-    }
+        End
+    End
 
-    if (add_new_line_to_each_field)
+    If add_new_line_to_each_field Then
         ss << std::string(data->recursion_level, '\t');
+    End
     
     ss << '}';
     
     return ss.str();
-}
+End
 
-function convert_function_decl_to_string(SaveData ptr data, FunctionDecl decl) -> std::string {
+function convert_function_decl_to_string(SaveData ptr data, FunctionDecl decl) -> std::string 
+Begin
     std::stringstream ss;
 
     // strip_prefix(decl.name, data->remove_prefixes);
 
-    for (let comment_text in decl.comment_text) {
-        if (comment_text != "") {
+    For let comment_text in decl.comment_text Then
+        If comment_text != "" Then
             ss << std::string(data->recursion_level, '\t') << comment_text << '\n';
-        }
-    }
+        End
+    End
 
     ss << std::string(data->recursion_level, '\t') << decl.name << " :: proc(";
-    for (var argument in decl.arguments) {
-        if (unallowed_keywords_in_odin.find(argument.name) != unallowed_keywords_in_odin.end()) {
+    For var argument in decl.arguments Then
+        If unallowed_keywords_in_odin.find(argument.name) != unallowed_keywords_in_odin.end() Then
             argument.name += "_v";
-        }
+        End
 
-        if (std::holds_alternative<TypeNamed>(argument.type)) {
-            var type_named = std::get<TypeNamed>(argument.type);
+        If std::holds_alternative<TypeNamed>(argument.type) Then
+            let type_named = std::get<TypeNamed>(argument.type);
 
-            if (argument.name != "" && argument.name != type_named.type_name)
+            If argument.name != "" && argument.name != type_named.type_name Then
                 ss << argument.name << ": ";
-            else if (argument.name == type_named.type_name)
+            Elif argument.name == type_named.type_name Then
                 ss << argument.name << "_v: ";
-            else
+            Else
                 ss << "_: ";
+            End
             
             ss << (type_named.type_name.find("proc") != std::string::npos ? 
                             type_named.type_name :
                             convert_type_name_to_string(data, type_named.type, type_named.type_name));
-        } else {
-            if (argument.name != "")
+        Else
+            If argument.name != "" Then
                 ss << argument.name << ": ";
-            else
+            Else
                 ss << "_: ";
+            End
 
-            var type_not_named = std::get<TypeNotNamed>(argument.type);
+            let type_not_named = std::get<TypeNotNamed>(argument.type);
 
             ss << std::string(type_not_named.pointer_level, '^') << 
                             (type_not_named.type == FieldType::ENUM ?
                             convert_enum_decl_to_string(data, data->enum_decls[type_not_named.index], false) :
                             convert_struct_decl_to_string(data, data->struct_decls[type_not_named.index], false));
-        }
+        End
 
         ss << ", ";
-    }
+    End
 
-    if (decl.arguments.size() > 0)
+    If decl.arguments.size() > 0 Then
         ss.seekp(-2, ss.cur);
+    End
 
     ss << ")";
 
-    if (std::holds_alternative<TypeNamed>(decl.return_type)) {
+    If std::holds_alternative<TypeNamed>(decl.return_type) Then
         var type_named = std::get<TypeNamed>(decl.return_type);
 
         trim_spaces_string(type_named.type_name);
 
-        if (type_named.type_name != "void") {
+        If type_named.type_name != "void" Then
             ss << " -> ";
             ss << convert_type_name_to_string(data, type_named.type, type_named.type_name);
-        }
-    } else {
-        var type_not_named = std::get<TypeNotNamed>(decl.return_type);
+        End
+    Else
+        let type_not_named = std::get<TypeNotNamed>(decl.return_type);
 
         ss << " -> " << std::string(type_not_named.pointer_level, '^');
 
-        if (type_not_named.type == FieldType::ENUM) {
+        If type_not_named.type == FieldType::ENUM Then
             ss << convert_enum_decl_to_string(data, data->enum_decls[type_not_named.index], false);
-        } else {
+        Else
             ss << convert_struct_decl_to_string(data, data->struct_decls[type_not_named.index], false);
-        }
-    }
+        End
+    End
 
     ss << " --- ";
 
     return ss.str();
-}
+End
 
-function modify_type_def(SaveData ref data, TypeDef ref type_def) -> void {
+function modify_type_def(SaveData ref data, TypeDef ref type_def) -> void 
+Begin
     GET_RAW_COMMENT(type_def.cursor);
     type_def.comment_text = comments;
 
     strip_prefix(type_def.name, data.remove_prefixes);
 
-    if (unallowed_keywords_in_odin.find(type_def.name) != unallowed_keywords_in_odin.end()) {
+    If unallowed_keywords_in_odin.find(type_def.name) != unallowed_keywords_in_odin.end() Then
         type_def.name += "_t";
-    }
+    End
 
     // if (type_def.is_proc_type) 
     //     return;
     
     #if DEBUG_PRINT
-    if (type_def.type_name.find("(*") != std::string::npos)
+    If type_def.type_name.find("(*") != std::string::npos Then
         std::cout << "FUNCTION PTR IS: " << type_def.type_name << std::endl;
+    End
     #endif
 
-    if (FIND_FUNCTION_PTR(type_def.type_name)) {
+    If FIND_FUNCTION_PTR(type_def.type_name) Then
         type_def.is_proc_type = true;
         type_def.type_name = convert_c_fptr_to_odin_fptr(ref data, type_def.type, type_def.type_name);
         return;
-    }
+    End
 
-    if (FIND_ARRAY_BRACES(type_def.type_name)) {
+    If FIND_ARRAY_BRACES(type_def.type_name) Then
         var type = type_def.type;
         var array_size = clang_getArraySize(type);
 
-        while (array_size != -1) {
+        While array_size != -1 Then
             type_def.array_sizes.push_back(cast(int, array_size));
             type = clang_getArrayElementType(type);
 
             array_size = clang_getArraySize(type);
-        }
+        End
 
         std::reverse(type_def.array_sizes.begin(), type_def.array_sizes.end());
-    }
+    End
 
-    bool is_struct = type_def.type_name.find("struct ") != std::string::npos;
-    bool is_enum = type_def.type_name.find("enum ") != std::string::npos;
-    bool is_union = type_def.type_name.find("union ") != std::string::npos;
+    let is_struct = type_def.type_name.find("struct ") != std::string::npos;
+    let is_enum = type_def.type_name.find("enum ") != std::string::npos;
+    let is_union = type_def.type_name.find("union ") != std::string::npos;
 
-    if (!(is_struct || is_enum || is_union)) {
+    If !(is_struct || is_enum || is_union) Then
         return;
-    }
+    End
 
     type_def.anonymous = false;
 
-    bool is_unnamed = FIND_ANONYMOUS(type_def.type_name);
+    let is_unnamed = FIND_ANONYMOUS(type_def.type_name);
     type_def.pointer_level = (unsigned int)std::count(type_def.type_name.begin(), type_def.type_name.end(), '*');
 
-    if (is_enum) {
+    If is_enum Then
         type_def.is = TypeDef::IS::ENUM;
 
-        if (is_unnamed) {
+        If is_unnamed Then
             type_def.anonymous = true;
             return;
-        }
+        End
 
-        if (type_def.pointer_level == 0) {
-            var type_to_check = type_def.type_name.substr(6, type_def.type_name.size()-5-type_def.pointer_level);
+        If type_def.pointer_level == 0 Then
+            let type_to_check = type_def.type_name.substr(6, type_def.type_name.size()-5-type_def.pointer_level);
 
-            bool found = false;
+            var found = false;
 
-            for (let decl in data.enum_decls) {
-                if (type_to_check == decl.name) {
+            For let decl in data.enum_decls Then
+                If type_to_check == decl.name Then
                     type_def.enum_decl = decl;
                     found = true;
-                }
-            }
+                End
+            End
 
-            if (!found) {
+            If !found Then
                 type_def.anonymous = true;
-            }
-        }
-    } else {
+            End
+        End
+    Else
         // we are just going to assume it's an struct at this point
         type_def.is = TypeDef::IS::STRUCT;
 
-        if (is_unnamed) {
+        If is_unnamed Then
             type_def.anonymous = true;
             return;
-        }
+        End
 
-        if (type_def.pointer_level == 0) {
-            var type_to_check = type_def.type_name.substr(7, type_def.type_name.size()-6-type_def.pointer_level);
+        If type_def.pointer_level == 0 Then
+            let type_to_check = type_def.type_name.substr(7, type_def.type_name.size()-6-type_def.pointer_level);
 
             bool found = false;
 
-            for (let decl in data.struct_decls) {
-                if (type_to_check == decl.name) {
+            For let decl in data.struct_decls Then
+                If type_to_check == decl.name Then
                     type_def.struct_decl = decl;
                     found = true;
-                }
-            }
+                End
+            End
 
-            if (!found) {
+            If !found Then
                 type_def.anonymous = true;
-            }
-        }
-    }
-}
+            End
+        End
+    End
+End
 
-function parse_function(SaveData ptr data, std::string name, CXCursor cursor) -> void {
+function parse_function(SaveData ptr data, std::string name, CXCursor cursor) -> void 
+Begin
     FunctionDecl decl;
 
-    for (let decl in data->function_decls) {
-        if (decl.name == name) {
+    For let decl in data->function_decls Then 
+        If decl.name == name Then 
             return;
-        }
-    }
+        End
+    End
 
     GET_RAW_COMMENT(cursor);
     decl.comment_text = comments;
 
     decl.name = name;
 
-    var num_arguments = clang_Cursor_getNumArguments(cursor);
+    let num_arguments = clang_Cursor_getNumArguments(cursor);
 
     decl.arguments.reserve(num_arguments);
 
-    for (var i = 0; i < num_arguments; i++) {
-        var argument_cursor = clang_Cursor_getArgument(cursor, (unsigned int)i);
+    For var i = 0; i < num_arguments; i++ Then 
+        let argument_cursor = clang_Cursor_getArgument(cursor, (unsigned int)i);
 
-        var name = std::string(cast(char ptr, clang_getCursorSpelling(argument_cursor).data));
+        let name = std::string(cast(char ptr, clang_getCursorSpelling(argument_cursor).data));
 
-        var type = clang_getCursorType(argument_cursor);
+        let type = clang_getCursorType(argument_cursor);
 
         Argument argument;
         argument.type = convert_type_to_string(data, type);
@@ -821,18 +844,19 @@ function parse_function(SaveData ptr data, std::string name, CXCursor cursor) ->
         decl.arguments.push_back(
             argument
         );
-    }
+    End
 
-    var return_type = clang_getCursorResultType(cursor);
+    let return_type = clang_getCursorResultType(cursor);
 
     decl.return_type = convert_type_to_string(data, return_type);
     
     data->function_decls.push_back(decl);
-}
+End
 
 
 // 'recurse' doesn't really make sense here, but I couldn't figure out what to name it.
-function recurse_enum(SaveData ptr data, std::string name, CXCursor cursor, bool declaring) -> void {
+function recurse_enum(SaveData ptr data, std::string name, CXCursor cursor, bool declaring) -> void 
+Begin
     EnumDecl decl;
 
     decl.name = name;
@@ -840,54 +864,90 @@ function recurse_enum(SaveData ptr data, std::string name, CXCursor cursor, bool
 
     decl.comment_text = comments;
 
-    data->current_data = ref decl;
+    Struct PassData Begin
+        EnumDecl ptr decl;
+        std::string prefix_to_remove;
+    EndRecord
+
+    PassData pass_data;
+    pass_data.decl = ref decl;
+    pass_data.prefix_to_remove = "";
+
+    data->current_data = ref pass_data;
     
     clang_visitChildren(
         cursor,
-        [](CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXChildVisitResult {
+        [](CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXChildVisitResult 
+        Begin
             var data = cast(SaveData ptr, client_data);
 
-            switch (cursor.kind) {
-                case CXCursor_EnumConstantDecl:
-                    {
-                        var decl = cast(EnumDecl ptr, data->current_data);
-                        GET_RAW_COMMENT(cursor);
+            Switch cursor.kind Then 
+                Case(CXCursor_EnumConstantDecl)
+                    let pass_data = cast(PassData ptr, data->current_data);
 
-                        std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-                        unsigned long long value = clang_getEnumConstantDeclUnsignedValue(cursor);
-                        long long value2 = clang_getEnumConstantDeclValue(cursor);
+                    var prefix_to_remove = ref pass_data->prefix_to_remove;
+                    var decl = pass_data->decl;
+                    GET_RAW_COMMENT(cursor);
 
-                        bool is_negative = (long long)value > value2;
+                    std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+                    let value = clang_getEnumConstantDeclUnsignedValue(cursor);
+                    let value2 = clang_getEnumConstantDeclValue(cursor);
 
-                        decl->constants.push_back({ name, is_negative, cast(uint64_t, is_negative ? -value2 : value), comments });
-                    }
+                    let is_negative = cast(long long, value) > value2; 
 
-                    break;
-            }
+                    If deref prefix_to_remove == "" Then
+                        deref prefix_to_remove = name;
+                    Else
+                        For var i = name.size(); i > 0; i-- Then
+                            let prefix = name.substr(0, i);
+                            let a = prefix_to_remove->find(prefix);
+
+                            If a == 0 Then 
+                                deref prefix_to_remove = prefix;
+                                break;
+                            End
+                        End
+                    End
+
+                    decl->constants.push_back({ name, is_negative, cast(uint64_t, is_negative ? -value2 : value), comments });
+                EndCase
+            End
 
             return CXChildVisit_Continue;
-        },
+        End,
         data
     );
 
     var i = 0;
     var found = false;
-    for (let decl in data->enum_decls) {
-        if (decl.name == name) {
+    For let decl in data->enum_decls Then 
+        If decl.name == name Then 
             found = true;
             break;
-        }
+        End
 
         i++;
-    }
+    End
 
-    if (found && name != "" && declaring)
+    For var ref constant in decl.constants Then 
+        var ref name = std::get<0>(constant);
+
+        If name == pass_data.prefix_to_remove Then
+            continue;
+        End
+
+        name.erase(0, pass_data.prefix_to_remove.size());
+    End
+
+    If found && name != "" && declaring Then
         data->enum_decls[i] = decl;
-    else
+    Else
         data->enum_decls.push_back(decl);
-}
+    End
+End
 
-function recurse_struct(SaveData ptr data, std::string name, CXCursor cursor, bool is_union, bool declaring) -> void {
+function recurse_struct(SaveData ptr data, std::string name, CXCursor cursor, bool is_union, bool declaring) -> void 
+Begin
     StructDecl decl; 
 
     decl.name = name;
@@ -900,259 +960,239 @@ function recurse_struct(SaveData ptr data, std::string name, CXCursor cursor, bo
 
     clang_visitChildren(
         cursor,
-        [](CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXChildVisitResult {
+        [](CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXChildVisitResult 
+        Begin
             var data = cast(SaveData ptr, client_data);
-            bool is_union = false;
+            var is_union = false;
 
-            switch (cursor.kind) {
-                case CXCursor_FieldDecl:
-                    {
-                        StructField field;
-                        GET_RAW_COMMENT(cursor);
-                        field.comment_text = comments;
+            Switch cursor.kind Then 
+                Case(CXCursor_FieldDecl)
+                    StructField field;
+                    GET_RAW_COMMENT(cursor);
+                    field.comment_text = comments;
 
-                        var type = clang_getCursorType(cursor);
+                    let type = clang_getCursorType(cursor);
 
-                        var type_name = std::string((char ptr)clang_getTypeSpelling(type).data);
+                    let type_name = std::string((char ptr)clang_getTypeSpelling(type).data);
 
-                        field.name = (char ptr)clang_getCursorSpelling(cursor).data;
+                    field.name = (char ptr)clang_getCursorSpelling(cursor).data;
 
-                        strip_prefix(field.name, data->remove_prefixes);
-                        if (unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end()) {
-                            field.name += "_v";
-                        }
+                    strip_prefix(field.name, data->remove_prefixes);
+                    If unallowed_keywords_in_odin.find(field.name) != unallowed_keywords_in_odin.end() Then 
+                        field.name += "_v";
+                    End
 
-                        field.is_type_named = !FIND_ANONYMOUS(type_name);
+                    field.is_type_named = !FIND_ANONYMOUS(type_name);
 
-                        #define FIELDS cast(StructDecl ptr, data->current_data)->fields
+                    #define FIELDS cast(StructDecl ptr, data->current_data)->fields
 
-                        if (field.is_type_named) {
-                            field.type_named.type = type;
-                            field.type_named.type_name = type_name;
+                    If field.is_type_named Then 
+                        field.type_named.type = type;
+                        field.type_named.type_name = type_name;
 
-                            if (FIND_FUNCTION_PTR(type_name) && FIELDS.size() > 0 && FIELDS[FIELDS.size()-1].name == "_") {
-                                FIELDS.pop_back();
-                            }
-                        } else {
-                            field.type_not_named.pointer_level = (unsigned int)std::count(type_name.begin(), type_name.end(), '*');
-
-                            if (type_name.find("struct") != std::string::npos) {
-                                field.type_not_named.type = FieldType::STRUCT;
-
-                                field.type_not_named.index = data->struct_decls.size()-1;
-                            } else {
-                                field.type_not_named.type = FieldType::ENUM;
-
-                                field.type_not_named.index = data->enum_decls.size()-1;
-                            }
-
+                        If FIND_FUNCTION_PTR(type_name) && FIELDS.size() > 0 && FIELDS[FIELDS.size()-1].name == "_" Then 
                             FIELDS.pop_back();
-                        }
-                        
+                        End
+                    Else
+                        field.type_not_named.pointer_level = (unsigned int)std::count(type_name.begin(), type_name.end(), '*');
 
-                        FIELDS.push_back(field);                        
-                        #undef FIELDS
-                    }
+                        If type_name.find("struct") != std::string::npos Then 
+                            field.type_not_named.type = FieldType::STRUCT;
 
-                    break;
+                            field.type_not_named.index = data->struct_decls.size()-1;
+                        Else
+                            field.type_not_named.type = FieldType::ENUM;
 
-                case CXCursor_UnionDecl:
+                            field.type_not_named.index = data->enum_decls.size()-1;
+                        End
+
+                        FIELDS.pop_back();
+                    End
+                    
+
+                    FIELDS.push_back(field);                        
+                    #undef FIELDS
+                EndCase
+
+                Case(CXCursor_UnionDecl)
                     is_union = true;
-                case CXCursor_StructDecl:
-                    {
-                        void ptr current_data = data->current_data;
+                Case(CXCursor_StructDecl)
+                    void ptr current_data = data->current_data;
 
-                        std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+                    std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
 
-                        recurse_struct(data, name, cursor, is_union);
+                    recurse_struct(data, name, cursor, is_union);
 
-                        data->current_data = current_data;
+                    data->current_data = current_data;
 
-                        StructField field;
-                        field.name = "_";
-                        field.is_type_named = false;
-                        field.type_not_named.index = data->struct_decls.size()-1;
-                        field.type_not_named.pointer_level = 0;
-                        field.type_not_named.type = FieldType::STRUCT;
+                    StructField field;
+                    field.name = "_";
+                    field.is_type_named = false;
+                    field.type_not_named.index = data->struct_decls.size()-1;
+                    field.type_not_named.pointer_level = 0;
+                    field.type_not_named.type = FieldType::STRUCT;
 
-                        cast(StructDecl ptr, data->current_data)->fields.push_back(field);
-                    }
+                    cast(StructDecl ptr, data->current_data)->fields.push_back(field);
+                EndCase
+                EndCase
 
-                    break;
+                Case(CXCursor_EnumDecl)
+                    void ptr current_data = data->current_data;
 
-                case CXCursor_EnumDecl:
-                    {
-                        void ptr current_data = data->current_data;
+                    std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
 
-                        std::string name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+                    recurse_enum(data, name, cursor);
 
-                        recurse_enum(data, name, cursor);
+                    data->current_data = current_data;
 
-                        data->current_data = current_data;
+                    StructField field;
+                    field.name = "_";
+                    field.is_type_named = false;
+                    field.type_not_named.index = data->enum_decls.size()-1;
+                    field.type_not_named.pointer_level = 0;
+                    field.type_not_named.type = FieldType::ENUM;
 
-                        StructField field;
-                        field.name = "_";
-                        field.is_type_named = false;
-                        field.type_not_named.index = data->enum_decls.size()-1;
-                        field.type_not_named.pointer_level = 0;
-                        field.type_not_named.type = FieldType::ENUM;
-
-                        cast(StructDecl ptr, data->current_data)->fields.push_back(field);
-                    }
-
-                    break;
-            }
+                    cast(StructDecl ptr, data->current_data)->fields.push_back(field);
+                EndCase
+            End
 
             return CXChildVisit_Continue;
-        },       
+        End,       
         data
     );
 
-    int i = 0;
-    bool found = false;
-    for (let decl in data->struct_decls) {
-        if (decl.name == name) {
+    var i = 0;
+    var found = false;
+    For let decl in data->struct_decls Then 
+        If decl.name == name Then 
             found = true;
             break;
-        }
+        End
 
         i++;
-    }
+    End
 
-    if (found && name != "" && declaring) 
+    If found && name != "" && declaring Then 
         data->struct_decls[i] = decl;
-    else
+    Else
         data->struct_decls.push_back(decl);
-}
+    End
+End
 
-static inline CXVisitorResult build_queue(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+function build_queue(CXCursor cursor, CXCursor parent, CXClientData client_data) -> CXVisitorResult 
+Begin
     CXSourceLocation location = clang_getCursorLocation(cursor);
 
-    if(clang_Location_isInSystemHeader(location) != 0)
+    If clang_Location_isInSystemHeader(location) != 0 Then
         return CXVisit_Continue;
+    End
     
     var ptr queue = cast(DataQueue ptr, client_data);
 
-    switch (cursor.kind) {
-        case CXCursor_StructDecl:
-            {
-                DataEntry entry;
-                entry.is = DataEntry::IS::STRUCT;
-                entry.cursor = cursor;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+    Switch cursor.kind Then 
+        Case(CXCursor_StructDecl)
+            DataEntry entry;
+            entry.is = DataEntry::IS::STRUCT;
+            entry.cursor = cursor;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
 
-                queue->data.push_back(entry);    
-            }
-            break;
+            queue->data.push_back(entry);    
+        EndCase
         
-        case CXCursor_MacroDefinition: 
-        case CXCursor_MacroExpansion:
-            {
-                // probably just going to make my own macro parser instead, since it seems 
-                // to have done all the macro parsing by now
-                // for the meantime, I should just get started on removing redudant enum
-                // constant prefixes..
-                var is_function_like = clang_Cursor_isMacroFunctionLike(cursor);
+        Case(CXCursor_MacroExpansion, CXCursor_MacroDefinition)
+            // probably just going to make my own macro parser instead, since it seems 
+            // to have done all the macro parsing by now
+            // for the meantime, I should just get started on removing redudant enum
+            // constant prefixes..
+            let is_function_like = clang_Cursor_isMacroFunctionLike(cursor);
 
-                #if DEBUG_PRINT
-                std::cout << "MACRO IS FUNCTION LIKE?: " << is_function_like << std::endl;
-                #endif
+            #if DEBUG_PRINT
+            std::cout << "MACRO IS FUNCTION LIKE?: " << is_function_like << std::endl;
+            #endif
 
-                // what we don't want, because most likely we won't able to even parse a 
-                // function like macro in the first place
-                if (is_function_like) break;
+            // what we don't want, because most likely we won't able to even parse a 
+            // function like macro in the first place
+            If is_function_like Then break; End
 
-                var definition_cursor = clang_getCursorDefinition(cursor);
-                var result = clang_Cursor_Evaluate(cursor);
+            std::cout << "IS THIS A CURSOR DEFINITION: " << clang_isCursorDefinition(cursor) << std::endl;
+            std::cout << "IS THIS A PREP DEFINITION: " << clang_isPreprocessing(cursor.kind) << std::endl;
 
+            var definition_cursor = clang_getCursorDefinition(cursor);
+            var result = clang_Cursor_Evaluate(cursor);
 
-                DataEntry entry;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-                entry.cursor = cursor;
-                entry.is = DataEntry::IS::CONSTANT;
+            DataEntry entry;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+            entry.cursor = cursor;
+            entry.is = DataEntry::IS::CONSTANT;
 
-                std::cout << "MACRO EVALUATION: " << clang_EvalResult_getKind(result) << std::endl;
-                std::cout << "CURSOR KIND: " << (char ptr)clang_getCursorDisplayName(cursor).data << std::endl;
-                
-                switch (clang_EvalResult_getKind(result)) {
-                    case CXEval_Float:
-                        {
-                            var r = clang_EvalResult_getAsDouble(result);
-
-                            entry.constant_string = std::to_string(r);
-                        }
-                        break;
-                    
-                    case CXEval_Int:
-                        {
-                            if (!clang_EvalResult_isUnsignedInt(result)) {
-                                var r = clang_EvalResult_getAsLongLong(result);
-                                entry.constant_string = std::to_string(r);
-                            } else {
-                                var r = clang_EvalResult_getAsUnsigned(result);
-                                entry.constant_string = std::to_string(r);
-                            }
-                        }
-                        break;
-                    
-                    case CXEval_StrLiteral:
-                        {
-                            var r = clang_EvalResult_getAsStr(result);
-                            entry.constant_string = r;
-                        }
-                        break;
-                }
-
-                queue->data.push_back(entry);
-            }
-            break;
-        
-        case CXCursor_UnionDecl:
-            {
-                DataEntry entry;
-                entry.is = DataEntry::IS::UNION;
-                entry.cursor = cursor;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-
-                queue->data.push_back(entry);    
-            }
-            break;
-
-        case CXCursor_EnumDecl: 
-            {
-                DataEntry entry;
-                entry.is = DataEntry::IS::ENUM;
-                entry.cursor = cursor;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-
-                queue->data.push_back(entry);
-            }
-            break;
-
-        case CXCursor_TypedefDecl:
-            {
-                DataEntry entry;
-                entry.is = DataEntry::IS::TYPEDEF;
-                entry.cursor = cursor;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-
-                queue->data.push_back(entry);
-            }
-            break;
-
-        case CXCursor_FunctionDecl:
-            {
-                DataEntry entry;
-                entry.is = DataEntry::IS::FUNCTION;
-                entry.cursor = cursor;
-                entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
-
-                queue->data.push_back(entry);
-            }
-            break;
+            std::cout << "MACRO EVALUATION: " << clang_EvalResult_getKind(result) << std::endl;
+            std::cout << "CURSOR KIND: " << (char ptr)clang_getCursorDisplayName(cursor).data << std::endl;
             
-    }
+            
+            Switch clang_EvalResult_getKind(result) Then 
+                Case(CXEval_Float)
+                    var r = clang_EvalResult_getAsDouble(result);
+
+                    entry.constant_string = std::to_string(r);
+                EndCase
+                
+                Case(CXEval_Int)
+                    If !clang_EvalResult_isUnsignedInt(result) Then 
+                        var r = clang_EvalResult_getAsLongLong(result);
+                        entry.constant_string = std::to_string(r);
+                    Else
+                        var r = clang_EvalResult_getAsUnsigned(result);
+                        entry.constant_string = std::to_string(r);
+                    End
+                EndCase
+                
+                Case(CXEval_StrLiteral)
+                    var r = clang_EvalResult_getAsStr(result);
+                    entry.constant_string = r;
+                EndCase
+            End
+
+            queue->data.push_back(entry);
+        EndCase
+        // EndCase
+        
+        Case(CXCursor_UnionDecl)
+            DataEntry entry;
+            entry.is = DataEntry::IS::UNION;
+            entry.cursor = cursor;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+
+            queue->data.push_back(entry);    
+        EndCase
+
+        Case(CXCursor_EnumDecl) 
+            DataEntry entry;
+            entry.is = DataEntry::IS::ENUM;
+            entry.cursor = cursor;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+
+            queue->data.push_back(entry);
+        EndCase
+
+        Case(CXCursor_TypedefDecl)
+            DataEntry entry;
+            entry.is = DataEntry::IS::TYPEDEF;
+            entry.cursor = cursor;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+
+            queue->data.push_back(entry);
+        EndCase
+
+        Case(CXCursor_FunctionDecl)
+            DataEntry entry;
+            entry.is = DataEntry::IS::FUNCTION;
+            entry.cursor = cursor;
+            entry.name = cast(char ptr, clang_getCursorSpelling(cursor).data);
+
+            queue->data.push_back(entry);
+        EndCase
+    End
 
     return CXVisit_Continue;
-}
+End
 

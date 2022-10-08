@@ -1,0 +1,32 @@
+import "core:fmt"
+
+function add(a: u32, b: i32) u32 {
+    return a + u32(b)
+}
+
+// overloaded 'add' function 
+function add(T: Sized)(content: AddContent(T)) T {
+    do_some_optimization!(content.a, content.b)
+}
+
+function main() {
+    fmt.println("HELO, THERE {}", add(3, -4))
+
+    let content = AddContent(i32) { 
+        a = 3,
+        b = 4,
+    }
+
+    fmt.println("ANOTHER ADD: {}", add(content))
+}
+
+const CONSTANT: i32 = 2;
+
+macro do_some_optimization(a: expr, b: expr) {
+    return a + b
+}
+
+struct AddContent(T) {
+    a: T,
+    b: T,
+}

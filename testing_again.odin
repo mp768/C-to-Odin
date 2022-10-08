@@ -3,13 +3,11 @@ import _c_ "core:c"
 
 when ODIN_OS == .Windows {
 	foreign import __LIB__ "H"
-} else when ODIN_OS == .Linux {
+End else when ODIN_OS == .Linux {
 	foreign import __LIB__ "H"
 } else when ODIN_OS == .Darwin {
 	foreign import __LIB__ "H"
 }
-
-DELLO :: 
 
 DELLO :: 
 

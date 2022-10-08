@@ -6,26 +6,27 @@
 #include <clang-c/Index.h>
 #include <unordered_map>
 #include <variant>
+#include "essential_macros.hpp"
 
-enum class FieldType {
+Enum FieldType Begin
     STRUCT,
     ENUM,
-};
+EndRecord
 
-struct TypeNamed {
+Struct TypeNamed Begin
     std::string type_name;
     CXType type;
     std::vector<int> array_sizes;
-};
+EndRecord
 
-struct TypeNotNamed {
+Struct TypeNotNamed Begin
     size_t index;
     FieldType type;
     int pointer_level;
     std::vector<int> array_sizes;
-};
+EndRecord
 
-struct StructField {
+Struct StructField Begin
     bool is_type_named;
 
     TypeNamed type_named;
@@ -36,37 +37,37 @@ struct StructField {
     std::vector<std::string> comment_text;
 
     std::string name;
-};
+EndRecord
 
-struct StructDecl {
+Struct StructDecl Begin
     std::string name;
     std::vector<StructField> fields;
     std::vector<std::string> comment_text;
     bool is_union;
-};
+EndRecord
 
-struct EnumDecl {
+Struct EnumDecl Begin
     std::string name;
     // CONSTANT_NAME = IS NEGATIVE, VALUE // COMMENT
     std::vector<std::tuple<std::string, bool, uint64_t, std::vector<std::string>>> constants; 
     std::vector<std::string> comment_text;
-};
+EndRecord
 
-struct Argument {
+Struct Argument Begin
     std::variant<TypeNamed, TypeNotNamed> type;
     std::string name;
-};
+EndRecord
 
-struct FunctionDecl {
+Struct FunctionDecl Begin
     std::string name;
 
     std::variant<TypeNamed, TypeNotNamed> return_type;
     std::vector<std::string> comment_text;
 
     std::vector<Argument> arguments;
-};
+EndRecord
 
-struct TypeDef {
+Struct TypeDef Begin
     std::string name;
 
     // refers to whether a struct or enum is type defined anonymously 
@@ -81,17 +82,17 @@ struct TypeDef {
 
     std::vector<std::string> comment_text;
 
-    enum class IS {
+    Enum IS Begin
         STRUCT,
         ENUM,
         NEITHER
-    } is;
+    End is;
 
     std::string type_name;
-};
+EndRecord
 
-struct DataEntry {
-    enum class IS {
+Struct DataEntry Begin
+    Enum IS Begin
         STRUCT,
         ENUM,
         UNION,
@@ -99,18 +100,18 @@ struct DataEntry {
         FUNCTION,
         CONSTANT,
         NONE,
-    } is;
+    End is;
 
     std::string constant_string;
     CXCursor cursor;
     std::string name;
-};
+EndRecord
 
-struct DataQueue {
+Struct DataQueue Begin
     std::vector<DataEntry> data;
-};
+EndRecord
 
-struct SaveData {
+Struct SaveData Begin
     std::vector<StructDecl> struct_decls;
     std::vector<EnumDecl> enum_decls;
     std::vector<FunctionDecl> function_decls;
@@ -134,20 +135,22 @@ struct SaveData {
 
     size_t recursion_level;
 
-    SaveData() {
+    SaveData() 
+    Begin
         struct_decls.reserve(8);
         type_defs.reserve(8);
         recursion_level = 0;
         current_data = nullptr;
-    }
+    End
 
-    ~SaveData() {
-        for (auto idx : idxs) {
+    ~SaveData() 
+    Begin
+        For let idx in idxs Then
             clang_disposeIndex(idx);
-        }
+        End
 
-        for (auto tu : tus) {
+        For let tu in tus Then
             clang_disposeTranslationUnit(tu);
-        }
-    }
-};
+        End
+    End
+EndRecord

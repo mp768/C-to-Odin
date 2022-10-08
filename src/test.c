@@ -34,8 +34,8 @@ typedef struct {
 }* HI;
 
 typedef enum {
-    Some = -1,
-    Enum = (DELLO),
+    SomeEnum_Some = -1,
+    SomeEnum_Enum = (DELLO),
 } SomeEnum;
 
 typedef Hello* test_HelloPtr;

@@ -14,27 +14,27 @@
 #include "functions.hpp"
 #include "print_functions.hpp"
 
+function save_to_file(SaveData ref data, std::string file_name) -> void;
 
-void save_to_file(SaveData& data, std::string file_name);
-
-bool parse_file(std::string file_path, SaveData& original_data) {
+function parse_file(std::string file_path, SaveData ref original_data) -> bool 
+Begin
     CXIndex index        = clang_createIndex(0, 1);
 
     std::vector<char*> arguments;
     arguments.push_back("-fparse-all-comments");
     
-    for (auto path : original_data.include_paths) {
+    For let path in original_data.include_paths Then
         arguments.push_back(const_cast<char*>(path.c_str()));
-    }
+    End
     
     CXTranslationUnit tu = clang_parseTranslationUnit(
         index, 
         file_path.c_str(), 
         arguments.data(), 
-        arguments.size(), 
+        cast(int, arguments.size()), 
         nullptr, 
         0, 
-        CXTranslationUnit_Flags::CXTranslationUnit_DetailedPreprocessingRecord
+        cast(unsigned int, CXTranslationUnit_Flags::CXTranslationUnit_DetailedPreprocessingRecord)
     );
 
     original_data.idxs.push_back(index);
@@ -45,9 +45,10 @@ bool parse_file(std::string file_path, SaveData& original_data) {
     std::cout << "RESULT: " << tu << std::endl;
     #endif
 
-    if(!tu)
+    If !tu Then
         return false;
-  
+    End
+
     CXCursor rootCursor = clang_getTranslationUnitCursor(tu);
 
     #if DEBUG_PRINT
@@ -71,135 +72,130 @@ bool parse_file(std::string file_path, SaveData& original_data) {
     data.remove_constant_prefixes = original_data.remove_constant_prefixes;
     data.convert_char_pointer_to_cstring = original_data.convert_char_pointer_to_cstring;
 
-    for (auto entry : queue.data) {
-        switch (entry.is) {
-            case DataEntry::IS::ENUM:
+    For let entry in queue.data Then
+        Switch entry.is Then
+            Case(DataEntry::IS::ENUM)
                 // TODO: Once enums are implemented.
                 recurse_enum(&data, entry.name, entry.cursor, true);
+            EndCase
 
-                break;
-
-            case DataEntry::IS::UNION:
+            Case(DataEntry::IS::UNION)
                 recurse_struct(&data, entry.name, entry.cursor, true, true);
-                break;
+            EndCase
 
-            case DataEntry::IS::STRUCT:
+            Case(DataEntry::IS::STRUCT)
                 recurse_struct(&data, entry.name, entry.cursor, false, true);
-                break;
+            EndCase
             
-            case DataEntry::IS::CONSTANT:
+            Case(DataEntry::IS::CONSTANT)
                 #if DEBUG_PRINT
                 std::cout << "MACRO CONSTANT GOTTEN: " << entry.name << std::endl;
                 #endif
 
                 data.macro_constants.push_back({ entry.name, entry.constant_string });
-                break;
+            EndCase
 
-            case DataEntry::IS::TYPEDEF:
+            Case(DataEntry::IS::TYPEDEF)
                 // go through typedefs assign with anonoymous structs first, then correct them in the next phase.
-                {
-                    TypeDef type_def;
+                TypeDef type_def;
 
-                    type_def.name = entry.name;
+                type_def.name = entry.name;
 
-                    type_def.cursor = entry.cursor;
-                    type_def.type = clang_getTypedefDeclUnderlyingType(entry.cursor);
+                type_def.cursor = entry.cursor;
+                type_def.type = clang_getTypedefDeclUnderlyingType(entry.cursor);
 
-                    type_def.type_name = (char*)clang_getTypeSpelling(type_def.type).data;
-                    type_def.struct_decl = data.struct_decls.size() != 0 ?
-                                           data.struct_decls[data.struct_decls.size()-1] :
-                                           StructDecl {};
+                type_def.type_name = (char*)clang_getTypeSpelling(type_def.type).data;
+                type_def.struct_decl = data.struct_decls.size() != 0 ?
+                                        data.struct_decls[data.struct_decls.size()-1] :
+                                        StructDecl {};
 
-                    type_def.enum_decl = data.enum_decls.size() != 0 ?
-                                         data.enum_decls[data.enum_decls.size()-1] :
-                                         EnumDecl {};
+                type_def.enum_decl = data.enum_decls.size() != 0 ?
+                                        data.enum_decls[data.enum_decls.size()-1] :
+                                        EnumDecl {};
 
-                    type_def.is = TypeDef::IS::NEITHER;
+                type_def.is = TypeDef::IS::NEITHER;
 
-                    data.type_defs.push_back(type_def);
-                }
+                data.type_defs.push_back(type_def);
+            EndCase
+        End
+    End
 
-                break;
-        }
-    }
-
-    for (auto& type_def : data.type_defs) {
+    For var ref type_def in data.type_defs Then
         modify_type_def(data, type_def);
         // std::cout << type_def.name << ": " << (int)type_def.is << std::endl;
-    }
+    End
 
-    for (auto entry : queue.data) {
-        switch (entry.is) {
-            case DataEntry::IS::FUNCTION:
+    For let entry in queue.data Then
+        Switch entry.is Then
+            Case(DataEntry::IS::FUNCTION)
                 parse_function(&data, entry.name, entry.cursor);
-                break;
-        }
-    }
+            EndCase
+        End
+    End
 
-    if (original_data.seperate_files) {
-        auto extension = file_path.find_last_of('.');
+    If original_data.seperate_files Then
+        let extension = file_path.find_last_of('.');
         data.package_name         = original_data.package_name;
         data.windows_library_path = original_data.windows_library_path;
         data.linux_library_path   = original_data.linux_library_path;
         data.mac_library_path     = original_data.mac_library_path;
 
-        auto new_file_path = file_path.erase(extension);
+        var new_file_path = file_path.erase(extension);
         new_file_path += ".odin";
 
         save_to_file(data, new_file_path);
 
-
         return true;
-    }
+    End
     
-    if (data.struct_decls.size() != 0) {
-        auto end = data.struct_decls.end();
-        auto start = data.struct_decls.begin();
-        auto oend = original_data.struct_decls.end();
+    If data.struct_decls.size() != 0 Then
+        let end = data.struct_decls.end();
+        let start = data.struct_decls.begin();
+        let oend = original_data.struct_decls.end();
         original_data.struct_decls.insert(oend, start, end);
-    }
+    End
 
-    if (data.enum_decls.size() != 0) {
-        auto end = data.enum_decls.end();
-        auto start = data.enum_decls.begin();
-        auto oend = original_data.enum_decls.end();
+    If data.enum_decls.size() != 0 Then
+        let end = data.enum_decls.end();
+        let start = data.enum_decls.begin();
+        let oend = original_data.enum_decls.end();
         original_data.enum_decls.insert(oend, start, end);
-    }
+    End
 
-    if (data.function_decls.size() != 0) {
-        auto end = data.function_decls.end();
-        auto start = data.function_decls.begin();
-        auto oend = original_data.function_decls.end();
+    If data.function_decls.size() != 0 Then
+        let end = data.function_decls.end();
+        let start = data.function_decls.begin();
+        let oend = original_data.function_decls.end();
         original_data.function_decls.insert(oend, start, end);
-    }
+    End
 
-    if (data.type_defs.size() != 0) {
-        auto end = data.type_defs.end();
-        auto start = data.type_defs.begin();
-        auto oend = original_data.type_defs.end();
+    If data.type_defs.size() != 0 Then
+        let end = data.type_defs.end();
+        let start = data.type_defs.begin();
+        let oend = original_data.type_defs.end();
         original_data.type_defs.insert(oend, start, end);
-    }
+    End
 
-    if (data.macro_constants.size() != 0) {
-        auto end = data.macro_constants.end();
-        auto start = data.macro_constants.begin();
-        auto oend = original_data.macro_constants.end();
+    If data.macro_constants.size() != 0 Then
+        let end = data.macro_constants.end();
+        let start = data.macro_constants.begin();
+        let oend = original_data.macro_constants.end();
         original_data.macro_constants.insert(oend, start, end);
-    }
+    End
 
     // for (auto decl : data.struct_decls) {
     //     print_struct(&data, decl);
-    // }
+    // End
 
     // for (auto type_def : data.type_defs) {
     //     print_type_def(&data, type_def);
-    // }
+    // End
 
     return true;
-}
+End
 
-// TODO: worry about library paths later
-void save_to_file(SaveData& data, std::string file_name) {
+function save_to_file(SaveData ref data, std::string file_name) -> void 
+Begin
     std::ofstream file(file_name);
 
     file << "package " << data.package_name << "\n";
@@ -207,138 +203,135 @@ void save_to_file(SaveData& data, std::string file_name) {
 
     file << "when ODIN_OS == .Windows {\n";
     file << "\tforeign import __LIB__ \"" << data.windows_library_path << "\"\n";
-    file << "} else when ODIN_OS == .Linux {\n";
+    file << "End else when ODIN_OS == .Linux {\n";
     file << "\tforeign import __LIB__ \"" << data.linux_library_path << "\"\n";
     file << "} else when ODIN_OS == .Darwin {\n";
     file << "\tforeign import __LIB__ \"" << data.mac_library_path << "\"\n}\n\n"; 
 
-    for (auto constant : data.macro_constants) {
+    For let constant in data.macro_constants Then
         file << std::get<0>(constant) << " :: " << std::get<1>(constant) << "\n\n";
-    }
+    End
 
-    for (auto type_def : data.type_defs) {
+    For var type_def in data.type_defs Then
         #if DEBUG_PRINT
         std::cout << "TYPEDEF NAMES: " << type_def.name << std::endl;
         std::cout << "IS: " << (int)type_def.is << std::endl;
         #endif
 
-        if (type_def.name != "" && data.type_names.find(type_def.name) == data.type_names.end()) {
+        If type_def.name != "" && data.type_names.find(type_def.name) == data.type_names.end() Then
             std::vector<std::string> comment_text;
             std::string content;
             std::string array_lengths;
-            switch (type_def.is) {
-                case TypeDef::IS::STRUCT:
+            Switch type_def.is Then
+                Case(TypeDef::IS::STRUCT)
                     comment_text = type_def.struct_decl.comment_text;
                     content = convert_struct_decl_to_string(&data, type_def.struct_decl);
-                    for (auto array_size : type_def.array_sizes) {
+                    For let array_size in type_def.array_sizes Then
                         array_lengths += "[" + std::to_string(array_size) + "]";
-                    }
+                    End
 
                     array_lengths += std::string(type_def.pointer_level, '^');
+                EndCase
 
-                    break;
-
-                case TypeDef::IS::ENUM:
+                Case(TypeDef::IS::ENUM)
                     comment_text = type_def.enum_decl.comment_text;
                     content = convert_enum_decl_to_string(&data, type_def.enum_decl);
-                    for (auto array_size : type_def.array_sizes) {
+                    For let array_size in type_def.array_sizes Then
                         array_lengths += "[" + std::to_string(array_size) + "]";
-                    }   
+                    End
 
                     array_lengths += std::string(type_def.pointer_level, '^');
+                EndCase
 
-                    break;
-
-                case TypeDef::IS::NEITHER:
+                Case(TypeDef::IS::NEITHER)
                     comment_text = type_def.comment_text;
                     content = "distinct ";
 
                     content += convert_type_name_to_string(&data, type_def.type, type_def.type_name);
+                EndCase
+            End
 
-                    break;
-            }
-
-            for (auto comment_text : comment_text) {
-                if (comment_text != "") {
+            For let comment_text in comment_text Then
+                If comment_text != "" Then
                     file << std::string(data.recursion_level, '\t') << comment_text << '\n';
-                }
-            }
+                End
+            End
 
             file << type_def.name << " :: " << array_lengths << content << "\n\n";
-        }
+        End
 
         data.type_names.emplace(type_def.name, "");
-    }
+    End
 
-    for (auto decl : data.enum_decls) {
+    For var decl in data.enum_decls Then
         strip_prefix(decl.name, data.remove_prefixes);
 
-        if (decl.name != "" && data.type_names.find(decl.name) == data.type_names.end()) {
+        If decl.name != "" && data.type_names.find(decl.name) == data.type_names.end() Then
             file << decl.name << " :: ";
             file << convert_enum_decl_to_string(&data, decl);
             file << "\n\n";
 
             data.type_names.emplace(decl.name, "");
-        }
-    }
+        End
+    End
 
-    for (auto decl : data.struct_decls) {
+    For var decl in data.struct_decls Then
         strip_prefix(decl.name, data.remove_prefixes);
 
-        if (decl.name != "" && data.type_names.find(decl.name) == data.type_names.end()) {
+        If decl.name != "" && data.type_names.find(decl.name) == data.type_names.end() Then
             file << decl.name << " :: ";
             file << convert_struct_decl_to_string(&data, decl);
             file << "\n\n";
 
             data.type_names.emplace(decl.name, "");
-        }
-    }
+        End
+    End
 
     std::unordered_map<std::string, std::vector<FunctionDecl>> function_decls;
 
-    for (auto decl : data.function_decls) {
-        if (decl.name != "main") {
-            auto prefix_stripped = strip_prefix(decl.name, data.remove_prefixes);
+    For var decl in data.function_decls Then
+        If decl.name != "main" Then
+            let prefix_stripped = strip_prefix(decl.name, data.remove_prefixes);
 
-            if (function_decls.find(prefix_stripped) == function_decls.end()) {
+            If function_decls.find(prefix_stripped) == function_decls.end() Then
                 function_decls[prefix_stripped] = std::vector<FunctionDecl>();
-            }
+            End
 
             function_decls[prefix_stripped].push_back(decl);
 
             //   convert_function_decl_to_string(&data, decl) << "\n\n";
-        }
-    }
+        End
+    End
 
-    for (auto a : function_decls) {
-        auto prefix = std::get<0>(a);
-        auto decls = std::get<1>(a);
+    For let a in function_decls Then
+        let prefix = std::get<0>(a);
+        let decls = std::get<1>(a);
 
         file << "@(default_calling_convention = \"c\"";
-        if (prefix != "")
+        If prefix != "" Then
             file << ", link_prefix = \"" << prefix << "\")\n";
-        else 
+        Else 
             file << ")\n";
+        End
         file << "foreign __LIB__ {\n"; 
 
         data.recursion_level += 1; 
 
-        for (auto decl : decls) {
+        For let decl in decls Then
             file << convert_function_decl_to_string(&data, decl) << "\n";
-        }
+        End
 
         data.recursion_level -= 1;
 
         file << "}\n\n";
-    }
+    End
 
 
     file.close();
-}
+End
 
-function main(int argc, char** argv) -> int {
-    let a = 2;
-
+function main(int argc, char** argv) -> int 
+Begin
     // if(argc < 2)
     //     return -1;
     //
@@ -354,203 +347,203 @@ function main(int argc, char** argv) -> int {
     // char* file_path[] = { "../../src/test.c", "../../src/test.h" };
     std::vector<std::string> file_paths;
 
-    {
+    Begin
         std::cout << "What files would you like to convert? (surround with quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         var first_quote = str.find('"');
 
-        while (first_quote != std::string::npos) {
+        While first_quote != std::string::npos Then
             str.erase(0, first_quote+1);
             let last_quote = str.find('"');
 
-            if (last_quote == std::string::npos) {
+            If last_quote == std::string::npos Then
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
-            }
+            End
 
             let path = str.substr(0, last_quote);
             file_paths.push_back(path);
             str = str.erase(0, last_quote+1);
 
             first_quote = str.find('"');
-        }
-    }
+        End
+    End
 
     std::vector<std::string> include_paths;
-    {
+    Begin
         std::cout << "What include paths are there? (surround with quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         var first_quote = str.find('"');
 
-        while (first_quote != std::string::npos) {
+        While first_quote != std::string::npos Then
             str.erase(0, first_quote+1);
             let last_quote = str.find('"');
 
-            if (last_quote == std::string::npos) {
+            If last_quote == std::string::npos Then
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
-            }
+            End
 
             let path = str.substr(0, last_quote);
             include_paths.push_back("-I" + path);
             str = str.erase(0, last_quote+1);
 
             first_quote = str.find('"');
-        }
-    }
+        End
+    End
 
     std::vector<std::string> prefixes_to_remove;
-    {
+    Begin
         std::cout << "What prefixes would you like to remove? (surround with quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         var first_quote = str.find('"');
 
-        while (first_quote != std::string::npos) {
+        While first_quote != std::string::npos Then
             str.erase(0, first_quote+1);
             let last_quote = str.find('"');
 
-            if (last_quote == std::string::npos) {
+            If last_quote == std::string::npos Then
                 std::cerr << "EXPECTED A '\"' TO END PATH!" << std::endl;
                 return -1;
-            }
+            End
 
             let prefix = str.substr(0, last_quote);
             prefixes_to_remove.push_back(prefix);
             str = str.erase(0, last_quote+1);
 
             first_quote = str.find('"');
-        }
-    }
+        End
+    End
 
     bool convert_to_cstring;
-    {
+    Begin
         std::cout << "Would you like to convert character pointers to cstring's? (Y or N): ";
         std::string str;
         std::getline(std::cin, str);
 
         convert_to_cstring = str.length() == 1 && std::tolower(str[0]) == 'y';
-    }
+    End
 
     bool seperate_files;
-    {
+    Begin
         std::cout << "Would you like to maintain seperate files? (Y or N): ";
         std::string str;
         std::getline(std::cin, str);
 
         seperate_files = str.length() == 1 && std::tolower(str[0]) == 'y';
-    }
+    End
     
     std::string package_name;
-    {
+    Begin
         std::cout << "What should the package be named? (enter in plain text and make sure it is a valid identifer): ";
         std::getline(std::cin, package_name);
-    }
+    End
 
     std::string windows_path;
-    {
+    Begin
         std::cout << "What will be the windows path to the library? (surround in quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         let first_quote = str.find('"');
 
-        if (first_quote == std::string::npos) {
+        If first_quote == std::string::npos Then
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
             return -1;
-        }
+        End
 
         str = str.erase(0, first_quote+1);
 
         let last_quote = str.find('"');
 
-        if (last_quote == std::string::npos) {
+        If last_quote == std::string::npos Then
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
             return -1;
-        }
+        End
 
         windows_path = str.substr(0, last_quote);
-    }
+    End
 
     std::string linux_path;
-    {
+    Begin
         std::cout << "What will be the linux path to the library? (surround in quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         let first_quote = str.find('"');
 
-        if (first_quote == std::string::npos) {
+        If first_quote == std::string::npos Then
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
             return -1;
-        }
+        End
 
         str = str.erase(0, first_quote+1);
 
         let last_quote = str.find('"');
 
-        if (last_quote == std::string::npos) {
+        If last_quote == std::string::npos Then
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
             return -1;
-        }
+        End
 
         linux_path = str.substr(0, last_quote);
-    }
+    End
 
     std::string mac_path;
-    {
+    Begin
         std::cout << "What will be the mac path to the library? (surround in quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         let first_quote = str.find('"');
 
-        if (first_quote == std::string::npos) {
+        If first_quote == std::string::npos Then
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
             return -1;
-        }
+        End
 
         str = str.erase(0, first_quote+1);
 
         let last_quote = str.find('"');
 
-        if (last_quote == std::string::npos) {
+        If last_quote == std::string::npos Then
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
             return -1;
-        }
+        End
 
         mac_path = str.substr(0, last_quote);
-    }
+    End
 
     std::string output_path;
-    if (!seperate_files) {
+    If !seperate_files Then
         std::cout << "Where would you like to output the file? (surround in quotes): ";
         std::string str;
         std::getline(std::cin, str);
 
         let first_quote = str.find('"');
 
-        if (first_quote == std::string::npos) {
+        If first_quote == std::string::npos Then
             std::cerr << "EXPECTED quotes AROUND THE LIBRARY PATH" << std::endl;
             return -1;
-        }
+        End
 
         str = str.erase(0, first_quote+1);
 
         let last_quote = str.find('"');
 
-        if (last_quote == std::string::npos) {
+        If last_quote == std::string::npos Then
             std::cerr << "EXPECTED AN ENDING QOUTE FOR THE PATH" << std::endl;
             return -1;
-        }
+        End
 
         output_path = str.substr(0, last_quote);
-    }
+    End
 
     SaveData data;
     data.remove_prefixes = prefixes_to_remove;
@@ -562,17 +555,14 @@ function main(int argc, char** argv) -> int {
     data.mac_library_path = mac_path;
     data.include_paths = include_paths;
 
-    If a > 3 Then 
-    
-    End
-
-    for (let file_path in file_paths) {
+    For let file_path in file_paths Then
         std::cout << "PARSING FILE \"" << file_path << "\"" << std::endl;
         parse_file(file_path, data);
-    }
+    End
 
-    if (!data.seperate_files)
+    If !data.seperate_files Then
         save_to_file(data, output_path);
+    End
 
     return 0;
-}
+End
